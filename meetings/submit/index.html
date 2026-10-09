@@ -63,7 +63,7 @@ permalink: /meetings/submit/
 
     <fieldset class="field group" data-field="wgs" id="f-wgs" data-group="wgs" aria-describedby="h-wgs e-wgs">
       <legend>Working Group(s)<span class="req" aria-hidden="true"> *</span><span class="sr-only req-sr"></span></legend>
-      <p class="hint" id="h-wgs">Choose one or more groups, or &ldquo;General community&rdquo; for events that are not tied to a single group.</p>
+      <p class="hint" id="h-wgs">Choose one or more groups (the Steering Committee, SC, can be combined with Working Groups), or &ldquo;General community&rdquo; for events that are not tied to a single group.</p>
       <div class="choices choices--inline">
         {%- for w in cfg.wgs %}{% unless w.active == false %}
         <label class="choice choice--check"><input type="checkbox" name="wgs" value="{{ w.id | escape }}"{% if w.exclusive %} data-exclusive="true"{% endif %}><span>{{ w.label | escape }}</span></label>

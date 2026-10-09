@@ -72,7 +72,7 @@ Rules enforced by `tools/validate-meetings.mjs` (and by CI on pull requests):
 
 Edit `_data/meetings_config.yml`:
 
-- **Working Groups** (`wgs`): add, rename, or retire (`active: false`).
+- **Working Groups and the Steering Committee** (`wgs`; `sc` is an ordinary entry that can be combined with Working Groups): add, rename, or retire (`active: false`).
 - **Meeting types, formats, access levels, statuses**: same pattern.
 - **Required fields per format**: the `requires` lists.
 - **Limits and recurrence rules**: `limits`, `recurrence`.

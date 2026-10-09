@@ -31,7 +31,13 @@ test("feed is RFC-shaped: CRLF only, folded, no blank lines, bracketed", () => {
     assert.ok(enc.encode(l).length <= 75, "line over 75 octets: " + l.slice(0, 40));
   }
   assert.match(feed, /\r\nPRODID:/);
-  assert.equal((feed.match(/BEGIN:VEVENT/g) || []).length, 8);
+  assert.equal((feed.match(/BEGIN:VEVENT/g) || []).length, 9);
+});
+
+test("an SC meeting is published with CATEGORIES:SC", () => {
+  const ev = feed.split("BEGIN:VEVENT").find((e) => e.includes("UID:sample-sc-steering-committee@"));
+  assert.ok(ev, "SC sample missing from the feed");
+  assert.match(ev, /\r\nCATEGORIES:SC\r\n/);
 });
 
 test("an empty calendar is still valid", () => {
@@ -45,7 +51,7 @@ test("an independent parser reads the feed and agrees with our recurrence and ti
   const comp = new ICAL.Component(ICAL.parse(feed));
   for (const tzc of comp.getAllSubcomponents("vtimezone")) ICAL.TimezoneService.register(tzc);
   const events = comp.getAllSubcomponents("vevent");
-  assert.equal(events.length, 8);
+  assert.equal(events.length, 9);
 
   for (const rec of records) {
     const vevent = events.find((e) => e.getFirstPropertyValue("uid") === `${rec.id}@paleoimaging.github.io`);

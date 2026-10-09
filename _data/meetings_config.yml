@@ -12,7 +12,9 @@
 # Version 2 added the optional `platform` field. Version 1 records stay valid.
 schema_version: 2
 
-# Working Groups. "general" is for events not tied to a single WG.
+# Working Groups and the Steering Committee (sc, an organisational category that
+# can be combined with Working Groups). "general" is for events not tied to a
+# single group.
 # `exclusive: true` means the id cannot be combined with other ids.
 wgs:
   - id: wg1
@@ -30,6 +32,10 @@ wgs:
   - id: wg4
     label: "WG4 · Datasets"
     short: WG4
+    active: true
+  - id: sc
+    label: "SC · Steering Committee"
+    short: SC
     active: true
   - id: general
     label: "General community"

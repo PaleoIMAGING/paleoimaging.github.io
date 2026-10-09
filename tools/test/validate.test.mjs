@@ -45,12 +45,12 @@ test("published records are valid", () => {
 
 test("sample fixtures are valid and cover every format, access level and several WGs", () => {
   const results = validateDir(join(fixtures, "meetings"), config);
-  assert.equal(results.length, 8);
+  assert.equal(results.length, 9);
   for (const r of results) assert.deepEqual(r.errors, [], r.file);
   const recs = results.map((r) => r.record);
   for (const f of ["online", "in-person", "hybrid"]) assert.ok(recs.some((m) => m.format === f), f);
   for (const a of ["public", "registration", "private"]) assert.ok(recs.some((m) => m.access === a), a);
-  assert.ok(recs.some((m) => m.wgs.length > 1) && recs.some((m) => m.wgs[0] === "general") && recs.some((m) => m.recurrence));
+  assert.ok(recs.some((m) => m.wgs.length > 1) && recs.some((m) => m.wgs[0] === "general") && recs.some((m) => m.wgs[0] === "sc") && recs.some((m) => m.recurrence));
 });
 
 test("sample records are never published as real meetings", () => {

@@ -147,6 +147,37 @@
       ]
     },
     {
+      "name": "sc alone is valid",
+      "patch": {
+        "wgs": [
+          "sc"
+        ]
+      },
+      "expect": []
+    },
+    {
+      "name": "sc can combine with a working group",
+      "patch": {
+        "wgs": [
+          "sc",
+          "wg2"
+        ]
+      },
+      "expect": []
+    },
+    {
+      "name": "general cannot combine with sc",
+      "patch": {
+        "wgs": [
+          "general",
+          "sc"
+        ]
+      },
+      "expect": [
+        "cannot be combined"
+      ]
+    },
+    {
       "name": "general cannot combine",
       "patch": {
         "wgs": [
