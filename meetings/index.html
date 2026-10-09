@@ -23,8 +23,9 @@ noindex: true   # remove when the calendar is announced
 <p class="banner" role="note"><strong>Sample data.</strong> The meetings listed below are illustrative examples used to test this calendar. They are not real PaleoIMAGING events.</p>
 {%- endif %}
 
-{%- if cfg.ui.submission.enabled %}
-<p class="notice-box"><a href="{{ cfg.ui.submission.url | escape }}">Propose a meeting</a></p>
+{%- assign sub = site.data.meetings_submission -%}
+{%- if sub.enabled and sub.endpoint != "" and sub.sitekey != "" %}
+<p class="notice-box"><a href="{{ '/meetings/submit/' | relative_url }}">Propose a meeting</a>. Every proposal is reviewed by administrators before it appears here.</p>
 {%- else %}
 <p class="notice-box">{{ cfg.ui.submission.message | escape }}</p>
 {%- endif %}

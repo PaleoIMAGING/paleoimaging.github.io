@@ -4,9 +4,12 @@
  *   meetings-validate.js + _data/meetings_config.yml  what is valid / required
  *   meetings-form-model.js                            answers -> record, error mapping
  *   meetings-render.js                                the preview card
- * There is no validation logic here and, by design, no network code: this
- * version only lets people fill in, check and preview a proposal. Nothing is
- * sent anywhere. Page text is written with textContent / DOM APIs only.
+ * There is no validation logic here. The only network code is the single
+ * POST to the submission Worker, and only when the page carries a
+ * #submission-config element (generated from _data/meetings_submission.yml).
+ * Without it the form stays review-only and nothing is ever sent. The Worker
+ * only files a pull request; nothing is published without administrator
+ * approval. Page text is written with textContent / DOM APIs only.
  */
 (function () {
   "use strict";
@@ -24,7 +27,21 @@
   try { cfg = JSON.parse(dataEl.textContent).config; } catch (e) { return; }
   var renderer = renderLib.create(cfg, { core: core, ics: icsLib });
 
-  var DRAFT_KEY = "paleoimaging.meetings.submit.draft.v1";
+  /* ---- submission settings (public values from the page) ---- */
+  var subEl = document.getElementById("submission-config");
+  var endpoint = subEl ? subEl.getAttribute("data-endpoint") || "" : "";
+  var sitekey = subEl ? subEl.getAttribute("data-sitekey") || "" : "";
+  var tsAction = subEl ? subEl.getAttribute("data-action") || "" : "";
+  var live = /^https:\/\/[^\s"'<>]+$/.test(endpoint) && /^[0-9A-Za-z_-]{8,80}$/.test(sitekey);
+  var TURNSTILE_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+  var SEND_TIMEOUT_MS = 25000;
+  var token = null;        // one-time Turnstile token; never reused
+  var widgetId = null;
+  var sending = false;
+  var tsLoading = false;
+  var tsFailed = false;
+
+  var DRAFT_KEY ="paleoimaging.meetings.submit.draft.v1";
   var TEXT_KEYS = ["title", "description", "type", "date", "startTime", "endTime", "endDate", "timezone", "tzOther",
     "recFreq", "recInterval", "recCount", "recUntil", "recExceptions", "venue", "city", "country", "address",
     "platform", "url", "registrationUrl", "accessNote"];
@@ -324,6 +341,157 @@
     var h = $("review-title");
     h.focus();
     h.scrollIntoView({ block: "start" });
+    if (live) { setMessage("", ""); mountTurnstile(); refreshSubmit(); }
+  }
+
+  /* ---- sending ---- */
+  function setMessage(kind, text) {
+    var box = $("submit-message");
+    if (!box) return;
+    box.textContent = text;
+    box.hidden = !text;
+    box.className = "banner" + (kind === "info" ? " banner--info" : "");
+    box.setAttribute("role", kind === "error" ? "alert" : "status");
+  }
+
+  function refreshSubmit() {
+    var btn = $("submit-btn");
+    var off = sending || !token || !reviewShown;
+    btn.disabled = off;
+    btn.setAttribute("aria-disabled", off ? "true" : "false");
+    btn.textContent = sending ? "Sending…" : "Submit for approval";
+  }
+
+  function resetTurnstile() {
+    token = null;
+    try { if (window.turnstile && widgetId !== null) window.turnstile.reset(widgetId); } catch (e) { /* widget gone: ignore */ }
+    refreshSubmit();
+  }
+
+  function mountTurnstile() {
+    if (widgetId !== null || tsLoading) return;
+    var render = function () {
+      try {
+        widgetId = window.turnstile.render("#turnstile-box", {
+          sitekey: sitekey,
+          action: tsAction || undefined,
+          callback: function (t) { token = t; if (!sending) setMessage("info", "Verification complete. You can now submit."); refreshSubmit(); },
+          "expired-callback": function () { token = null; setMessage("info", "The verification expired. Please complete it again."); refreshSubmit(); },
+          "error-callback": function () { token = null; setMessage("error", "The human-verification check could not run. Please try again, or reload the page (your answers are kept)."); refreshSubmit(); }
+        });
+      } catch (e) {
+        widgetId = null;
+        setMessage("error", "The human-verification check could not start. Reload the page and try again (your answers are kept).");
+      }
+    };
+    if (window.turnstile) { render(); return; }
+    if (tsFailed) tsFailed = false;
+    tsLoading = true;
+    setMessage("info", "Loading the human-verification check…");
+    var s = document.createElement("script");
+    s.src = TURNSTILE_SRC;
+    s.async = true;
+    s.defer = true;
+    s.onload = function () {
+      tsLoading = false;
+      if (window.turnstile) { setMessage("", ""); render(); }
+      else { tsFailed = true; setMessage("error", "The human-verification check did not load. Check that content blockers allow challenges.cloudflare.com, then reload."); }
+    };
+    s.onerror = function () {
+      tsLoading = false;
+      tsFailed = true;
+      setMessage("error", "The human-verification check did not load. Check your connection and that content blockers allow challenges.cloudflare.com, then reload (your answers are kept).");
+    };
+    document.head.appendChild(s);
+  }
+
+  /* Maps the Worker's answer to one clear message. `retry` = the person can try again right away. */
+  function describeFailure(status, data) {
+    var code = data && typeof data.error === "string" ? data.error : "";
+    if (status === 409 || code === "duplicate") return { text: "This proposal has already been received (possibly from an earlier attempt), so it was not sent again. An administrator will review it. Change the details if you meant to propose a different meeting.", final: true };
+    if (status === 422 || code === "validation_failed") {
+      var fields = data && Array.isArray(data.fields) ? data.fields.filter(function (f) { return typeof f === "string" && f.length < 60; }).slice(0, 8) : [];
+      return { text: "The service found a problem with the proposal" + (fields.length ? " (" + fields.join(", ") + ")" : "") + ". Please check your answers, edit the proposal and try again." };
+    }
+    if (status === 429 && code === "queue_full") return { text: "Many proposals are waiting for review right now. Please try again later; your answers are kept in this tab." };
+    if (status === 429 || code === "rate_limited") return { text: "Too many submissions from your network recently. Please wait a while (up to a day) and try again; your answers are kept in this tab." };
+    if (code === "turnstile_failed") return { text: "The human-verification check failed or expired. Please complete it again and press Submit once more." };
+    if (code === "disabled") return { text: "Online submissions are not open yet. Please try again later; your answers are kept in this tab." };
+    if (code === "forbidden_origin" || code === "unsupported_media_type" || code === "invalid_request" || code === "too_large") return { text: "The proposal could not be accepted from this page (error: " + (code || status) + "). Please reload the page and try again." };
+    if (status >= 500 || status === 0) return { text: "The submission service is temporarily unavailable. Nothing was lost: your answers are kept, so you can try again in a few minutes." };
+    return { text: "The proposal could not be sent (error " + status + "). Your answers are kept; please try again." };
+  }
+
+  function showSuccess(data) {
+    clearDraft();
+    $("review-panel").hidden = true;
+    form.hidden = true;
+    $("error-summary").hidden = true;
+    if ($("privacy-notice")) $("privacy-notice").hidden = true;
+    var pr = data && data.pullRequest;
+    var ref = $("success-ref");
+    ref.textContent = "";
+    if (pr && typeof pr.number === "number" && typeof pr.url === "string" && /^https:\/\/github\.com\/PaleoIMAGING\//.test(pr.url)) {
+      ref.appendChild(document.createTextNode("Reference: public pull request "));
+      var a = document.createElement("a");
+      a.href = pr.url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = "#" + pr.number;
+      ref.appendChild(a);
+      ref.appendChild(document.createTextNode("."));
+      ref.hidden = false;
+    } else ref.hidden = true;
+    var panel = $("success-panel");
+    panel.hidden = false;
+    var h = $("success-title");
+    h.focus();
+    h.scrollIntoView({ block: "start" });
+  }
+
+  function send() {
+    if (sending || !token || !live) return;
+    var rec = model.buildRecord(values, cfg);
+    if (validator.validate(rec, cfg).length) {   // the form is always re-checked before sending
+      attempted = true; update(); renderSummary(true); hideReview();
+      return;
+    }
+    var sentToken = token;
+    token = null;
+    sending = true;
+    refreshSubmit();
+    setMessage("info", "Sending your proposal… please wait.");
+    var honey = field("website");
+    var payload = JSON.stringify({ record: rec, turnstile_token: sentToken, website: honey ? honey.value : "" });
+    var ctl = typeof AbortController === "function" ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctl) ctl.abort(); }, SEND_TIMEOUT_MS);
+    var finish = function () { clearTimeout(timer); sending = false; resetTurnstile(); };
+    fetch(endpoint, {
+      method: "POST",
+      mode: "cors",
+      credentials: "omit",
+      referrerPolicy: "no-referrer",
+      headers: { "content-type": "application/json" },
+      body: payload,
+      signal: ctl ? ctl.signal : undefined
+    }).then(function (res) {
+      return res.text().then(function (t) {
+        var data = null;
+        try { data = JSON.parse(t); } catch (e) { data = null; }
+        return { status: res.status, data: data };
+      });
+    }).then(function (r) {
+      if (r.status === 201 && r.data && r.data.ok === true) { finish(); showSuccess(r.data); return; }
+      finish();
+      var f = describeFailure(r.status, r.data);
+      setMessage("error", f.text);
+      $("form-status").textContent = "The proposal was not sent.";
+      $("submit-message").focus();
+    }).catch(function () {
+      finish();
+      setMessage("error", "Could not reach the submission service. Check your connection. Your answers are kept; press Submit again. If the first attempt did arrive, you will be told it was already received, so nothing is duplicated.");
+      $("submit-message").focus();
+    });
   }
 
   /* ---- main update cycle ---- */
@@ -335,6 +503,7 @@
     refreshOrganizerChrome();
     renderErrors();
     if (attempted) renderSummary(false);
+    if (live) refreshSubmit();
     saveDraft();
   }
 
@@ -410,12 +579,30 @@
     firstFocusable("title").focus();
   });
 
-  // Submissions are intentionally not implemented in this version: the button
-  // stays disabled and no request is ever made.
+  // Without #submission-config the button stays disabled and no request is ever made.
   $("submit-btn").addEventListener("click", function (e) {
     e.preventDefault();
-    $("form-status").textContent = "Submissions are not enabled yet.";
+    if (!live) { $("form-status").textContent = "Submissions are not enabled yet."; return; }
+    send();
   });
+
+  if (live && $("another-btn")) {
+    $("another-btn").addEventListener("click", function () {
+      form.reset();
+      writeValues(model.defaultValues());
+      touched = {};
+      attempted = false;
+      reviewShown = false;
+      $("success-panel").hidden = true;
+      form.hidden = false;
+      if ($("privacy-notice")) $("privacy-notice").hidden = false;
+      setMessage("", "");
+      resetTurnstile();
+      update();
+      $("form-status").textContent = "";
+      firstFocusable("title").focus();
+    });
+  }
 
   /* Time-zone helper: offer the browser's zone explicitly, never preselect it. */
   var detectBtn = $("tz-detect");
