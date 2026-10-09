@@ -59,7 +59,11 @@ h1 { font-size: 1.75rem; line-height: 1.2; margin: 0 0 .5rem; color: var(--accen
 
 /* ---- meetings ---- */
 .banner { border: 1px solid #e3c477; background: var(--warn-bg); color: var(--warn); border-radius: .5rem; padding: .75rem 1rem; margin: 0 0 1.25rem; font-size: .9375rem; }
-.notice-box { border: 1px solid var(--line); background: var(--panel); border-radius: .5rem; padding: .75rem 1rem; margin: 0 0 1.25rem; font-size: .9375rem; color: var(--ink-soft); }
+.notice-title { margin: 0 0 .4rem; font-size: 1rem; color: var(--ink); }
+.notice-box ul { margin: 0; padding-left: 1.2rem; }
+.notice-box li { margin: 0 0 .4rem; }
+.turnstile-box { min-height: 65px; margin: 0 0 1rem; }
+.notice-box {border: 1px solid var(--line); background: var(--panel); border-radius: .5rem; padding: .75rem 1rem; margin: 0 0 1.25rem; font-size: .9375rem; color: var(--ink-soft); }
 
 .toolbar { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); align-items: end; background: var(--panel); border: 1px solid var(--line); border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
 .toolbar label { display: block; font-size: .8125rem; font-weight: 600; color: var(--ink-soft); margin-bottom: .25rem; }

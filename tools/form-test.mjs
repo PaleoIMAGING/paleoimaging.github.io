@@ -15,15 +15,21 @@ const FIXED = Date.UTC(2026, 9, 8, 12);
 const SCRIPTS = ["meetings-core.js", "meetings-validate.js", "meetings-ics.js", "meetings-render.js", "meetings-form-model.js", "meetings-form.js"];
 
 const results = [];
+const pending = [];
 const test = (name, fn) => {
-  try { fn(); results.push([true, name]); } catch (e) { results.push([false, name, e]); }
+  pending.push((async () => {
+    try { await fn(); results.push([true, name]); } catch (e) { results.push([false, name, e]); }
+  })());
 };
 
-function load({ detectedTz, draft } = {}) {
+// reviewOnly: remove the generated #submission-config (what a build with submissions off looks like to the script).
+// fetchImpl / turnstile: fakes for the one allowed network call and the Cloudflare widget.
+function load({ detectedTz, draft, reviewOnly, fetchImpl, turnstile = true } = {}) {
   const errors = [];
   const vc = new VirtualConsole();
   vc.on("jsdomError", (e) => errors.push(e.message));
-  const bare = html.replace(/<script src="[^"]*"><\/script>/g, "");
+  let bare = html.replace(/<script src="[^"]*"><\/script>/g, "");
+  if (reviewOnly) bare = bare.replace(/<div id="submission-config"[^>]*><\/div>/, "");
   const dom = new JSDOM(bare, { url: "https://paleoimaging.github.io/meetings/submit/", runScripts: "outside-only", virtualConsole: vc, pretendToBeVisual: true });
   const w = dom.window;
   if (draft) w.sessionStorage.setItem("paleoimaging.meetings.submit.draft.v1", draft);
@@ -31,12 +37,14 @@ function load({ detectedTz, draft } = {}) {
   w.Element.prototype.scrollIntoView = function () {};
   w.confirm = () => true;
   const calls = [];
-  w.fetch = (...a) => { calls.push(["fetch", a]); throw new Error("network must not be used"); };
+  w.fetch = (...a) => { calls.push(["fetch", a]); if (!fetchImpl) throw new Error("network must not be used"); return fetchImpl(...a); };
+  const widget = { renders: [], resets: 0 };
+  if (turnstile) w.turnstile = { render: (sel, opts) => { widget.renders.push({ sel, opts }); return "wid" + widget.renders.length; }, reset: () => { widget.resets++; } };
   w.XMLHttpRequest = function () { calls.push(["xhr"]); throw new Error("network must not be used"); };
   w.navigator.sendBeacon = (...a) => { calls.push(["beacon", a]); return false; };
   if (detectedTz) w.eval(`Intl.DateTimeFormat = (function (O) { return function (l, o) { var f = new O(l, o); if (!o) { f.resolvedOptions = function () { return { timeZone: "${detectedTz}" }; }; } return f; }; })(Intl.DateTimeFormat);`);
   for (const f of SCRIPTS) w.eval(readFileSync(join(siteRoot, "assets/js", f), "utf8"));
-  return { w, d: w.document, errors, calls };
+  return { w, d: w.document, errors, calls, widget };
 }
 
 const q = (d, sel) => d.querySelector(sel);
@@ -81,10 +89,12 @@ function fillValid(w, d, over = {}) {
 }
 
 // ---------------------------------------------------------------- structure
-test("loads without script errors and shows the not-enabled notice", () => {
+test("loads without script errors and shows the public-visibility notice", () => {
   const { d, errors } = load();
   assert.deepEqual(errors, []);
-  assert.match(q(d, "#submission-status").textContent, /not enabled yet/i);
+  assert.match(q(d, "#privacy-notice").textContent, /public GitHub pull request/i);
+  assert.match(q(d, "#privacy-notice").textContent, /before an administrator approves/i);
+  assert.match(q(d, "#privacy-notice").textContent, /Never enter private join links/i);
   assert.match(q(d, "h1").textContent, /Propose a meeting/);
   assert.match(q(d, ".lead").textContent, /approved by administrators/i);
 });
@@ -95,9 +105,9 @@ test("four sections in the requested order", () => {
   assert.deepEqual(heads, ["1 Meeting information", "2 Date & Time", "3 Location & Access", "4 Organizer"]);
 });
 
-test("page is noindex and not linked from the site navigation", () => {
+test("page is indexable and not linked from the site navigation", () => {
   const { d } = load();
-  assert.ok(q(d, 'meta[name="robots"][content*="noindex"]'));
+  assert.ok(!q(d, 'meta[name="robots"]'), "noindex removed");
   const nav = qa(d, "header nav a").map((a) => a.getAttribute("href"));
   assert.ok(!nav.some((h) => /submit/.test(h)), "no submit link in navigation");
 });
@@ -401,23 +411,213 @@ test("REVIEW: a series without an end is rejected with a clear message", () => {
   assert.match(q(d, "#error-summary").textContent, /how the series ends/i);
 });
 
-// -------------------------------------------------- submissions stay disabled
-test("DISABLED: the submit button is disabled and nothing is ever sent", () => {
-  const { w, d, calls } = load();
+// ------------------------------------------------------------------ sending
+const ENDPOINT = "https://paleoimaging-meetings-portal.andrebelem.workers.dev/submit/meeting";
+const reply = (status, body) => Promise.resolve({ status, text: () => Promise.resolve(typeof body === "string" ? body : JSON.stringify(body)) });
+const tick = async (n = 6) => { for (let i = 0; i < n; i++) await new Promise((r) => setTimeout(r, 0)); };
+const solve = (widget, t = "tok-1") => widget.renders[widget.renders.length - 1].opts.callback(t);
+function toReview(ctx, over) {
+  fillValid(ctx.w, ctx.d, over);
+  submit(ctx.w, ctx.d);
+  assert.ok(!q(ctx.d, "#review-panel").hidden, "review panel shown");
+}
+const OK_REPLY = { ok: true, requestId: "r1", pullRequest: { number: 7, url: "https://github.com/PaleoIMAGING/paleoimaging.github.io/pull/7" } };
+
+test("SEND: nothing is sent before the person submits; the widget uses the production site key and action; button waits for verification", () => {
+  const ctx = load({ fetchImpl: () => reply(201, OK_REPLY) });
+  const { d, calls, widget } = ctx;
+  assert.equal(calls.length, 0);
+  toReview(ctx);
+  assert.equal(calls.length, 0, "reviewing sends nothing");
+  assert.equal(widget.renders.length, 1);
+  assert.equal(widget.renders[0].sel, "#turnstile-box");
+  assert.equal(widget.renders[0].opts.sitekey, "0x4AAAAAAFR4AjdSJ4lSLm26");
+  assert.equal(widget.renders[0].opts.action, "meeting_submit");
+  assert.ok(q(d, "#submit-btn").disabled, "disabled until the check is solved");
+  q(d, "#submit-btn").click();
+  assert.equal(calls.length, 0, "a disabled-state click sends nothing");
+  solve(widget);
+  assert.ok(!q(d, "#submit-btn").disabled);
+  assert.equal(q(d, "#submit-btn").getAttribute("aria-disabled"), "false");
+});
+
+test("SEND: success posts exactly record + token + honeypot to the Worker, then shows the awaiting-approval confirmation", async () => {
+  const ctx = load({ fetchImpl: () => reply(201, OK_REPLY) });
+  const { w, d, calls, widget } = ctx;
+  toReview(ctx);
+  solve(widget, "tok-abc");
+  q(d, "#submit-btn").click();
+  assert.equal(q(d, "#submit-btn").textContent, "Sending…");
+  assert.ok(q(d, "#submit-btn").disabled, "locked while sending");
+  q(d, "#submit-btn").click(); // double click
+  await tick();
+  assert.equal(calls.length, 1, "exactly one request");
+  const [url, init] = calls[0][1];
+  assert.equal(url, ENDPOINT);
+  assert.equal(init.method, "POST");
+  assert.equal(init.credentials, "omit");
+  assert.equal(init.referrerPolicy, "no-referrer");
+  assert.equal(init.headers["content-type"], "application/json");
+  const body = JSON.parse(init.body);
+  assert.deepEqual(Object.keys(body).sort(), ["record", "turnstile_token", "website"]);
+  assert.equal(body.turnstile_token, "tok-abc");
+  assert.equal(body.website, "");
+  assert.equal(body.record.title, "WG2 interlab call");
+  assert.ok(q(d, "#submit-form").hidden && q(d, "#review-panel").hidden);
+  assert.ok(!q(d, "#success-panel").hidden);
+  assert.match(q(d, "#success-panel").textContent, /awaiting approval by an administrator/i);
+  assert.equal(q(d, "#success-ref a").getAttribute("href"), "https://github.com/PaleoIMAGING/paleoimaging.github.io/pull/7");
+  assert.equal(q(d, "#success-ref a").rel, "noopener noreferrer");
+  assert.equal(w.sessionStorage.getItem("paleoimaging.meetings.submit.draft.v1"), null, "draft removed after success");
+  assert.ok(widget.resets >= 1, "token is never reused");
+});
+
+test("SEND: a filled honeypot is passed on to the Worker unchanged", async () => {
+  const ctx = load({ fetchImpl: () => reply(201, { ok: true, requestId: "r" }) });
+  toReview(ctx);
+  ctx.d.querySelector('input[name="website"]').value = "http://spam.example";
+  solve(ctx.widget);
+  q(ctx.d, "#submit-btn").click();
+  await tick();
+  assert.equal(JSON.parse(ctx.calls[0][1][1].body).website, "http://spam.example");
+  assert.equal(q(ctx.d, "#success-ref").hidden, true, "no pull-request link when none was returned");
+});
+
+test("SEND: a pull-request link outside the PaleoIMAGING organisation is never rendered", async () => {
+  const ctx = load({ fetchImpl: () => reply(201, { ok: true, pullRequest: { number: 1, url: "https://evil.example/x" } }) });
+  toReview(ctx);
+  solve(ctx.widget);
+  q(ctx.d, "#submit-btn").click();
+  await tick();
+  assert.equal(q(ctx.d, "#success-ref a"), null);
+  assert.ok(!q(ctx.d, "#success-panel").hidden);
+});
+
+const FAILURES = [
+  ["duplicate (409)", 409, { ok: false, error: "duplicate" }, /already been received/i],
+  ["rate limited (429)", 429, { ok: false, error: "rate_limited" }, /too many submissions/i],
+  ["queue full (429)", 429, { ok: false, error: "queue_full" }, /waiting for review/i],
+  ["server validation (422)", 422, { ok: false, error: "validation_failed", fields: ["title", "start"] }, /problem with the proposal \(title, start\)/i],
+  ["verification failed (403)", 403, { ok: false, error: "turnstile_failed" }, /verification check failed or expired/i],
+  ["not open yet (503 disabled)", 503, { ok: false, error: "disabled" }, /not open yet/i],
+  ["service down (502)", 502, { ok: false, error: "upstream_error" }, /temporarily unavailable/i],
+  ["service down (500, non-JSON body)", 500, "<html>oops</html>", /temporarily unavailable/i]
+];
+for (const [label, status, body, rx] of FAILURES) {
+  test(`SEND: ${label}: clear message, answers kept, new verification required, nothing duplicated`, async () => {
+    const ctx = load({ fetchImpl: () => reply(status, body) });
+    const { d, w, calls, widget } = ctx;
+    toReview(ctx);
+    solve(widget, "tok-1");
+    q(d, "#submit-btn").click();
+    await tick();
+    const msg = q(d, "#submit-message");
+    assert.ok(!msg.hidden, "message shown");
+    assert.match(msg.textContent, rx);
+    assert.equal(msg.getAttribute("role"), "alert");
+    assert.equal(q(d, "#f-title").value, "WG2 interlab call", "form contents kept");
+    assert.ok(q(d, "#submit-form").hidden === false && !q(d, "#review-panel").hidden, "still on the review step");
+    assert.ok(q(d, "#success-panel").hidden);
+    assert.ok(q(d, "#submit-btn").disabled, "single-use token spent: must verify again");
+    assert.ok(widget.resets >= 1, "widget reset");
+    assert.ok(w.sessionStorage.getItem("paleoimaging.meetings.submit.draft.v1"), "draft still stored");
+    // Retry with a fresh token produces exactly one more request, with the new token.
+    solve(widget, "tok-2");
+    q(d, "#submit-btn").click();
+    await tick();
+    assert.equal(calls.length, 2);
+    assert.equal(JSON.parse(calls[1][1][1].body).turnstile_token, "tok-2");
+  });
+}
+
+test("SEND: a network failure keeps the answers and the retry says 'already received' if the first attempt got through", async () => {
+  let n = 0;
+  const ctx = load({ fetchImpl: () => (++n === 1 ? Promise.reject(new TypeError("Failed to fetch")) : reply(409, { ok: false, error: "duplicate" })) });
+  const { d, widget } = ctx;
+  toReview(ctx);
+  solve(widget, "a");
+  q(d, "#submit-btn").click();
+  await tick();
+  assert.match(q(d, "#submit-message").textContent, /could not reach the submission service/i);
+  assert.match(q(d, "#submit-message").textContent, /nothing is duplicated/i);
+  assert.equal(q(d, "#f-title").value, "WG2 interlab call");
+  solve(widget, "b");
+  q(d, "#submit-btn").click();
+  await tick();
+  assert.match(q(d, "#submit-message").textContent, /already been received/i);
+});
+
+test("SEND: Worker-supplied text is never inserted as markup", async () => {
+  const ctx = load({ fetchImpl: () => reply(422, { ok: false, error: "validation_failed", message: "<img src=x onerror=1>", fields: ["<b>x</b>"] }) });
+  toReview(ctx);
+  solve(ctx.widget);
+  q(ctx.d, "#submit-btn").click();
+  await tick();
+  assert.equal(qa(ctx.d, "#submit-message img, #submit-message b").length, 0);
+});
+
+test("SEND: editing after review hides the review step and disables sending", () => {
+  const ctx = load({ fetchImpl: () => reply(201, OK_REPLY) });
+  toReview(ctx);
+  solve(ctx.widget);
+  assert.ok(!q(ctx.d, "#submit-btn").disabled);
+  type(ctx.w, ctx.d, "title", "Changed");
+  assert.ok(q(ctx.d, "#review-panel").hidden);
+  assert.ok(q(ctx.d, "#submit-btn").disabled);
+  assert.equal(ctx.calls.length, 0);
+});
+
+test("SEND: the Cloudflare script is loaded only when needed, from challenges.cloudflare.com, and its failure is explained", () => {
+  const ctx = load({ turnstile: false, fetchImpl: () => reply(201, OK_REPLY) });
+  const { w, d } = ctx;
+  assert.equal(qa(d, 'script[src*="cloudflare"]').length, 0, "not loaded with the page");
+  toReview(ctx);
+  const s = q(d, 'head script[src^="https://challenges.cloudflare.com/turnstile/v0/api.js"]');
+  assert.ok(s, "script added on review");
+  assert.ok(/render=explicit/.test(s.src));
+  s.onerror();
+  assert.match(q(d, "#submit-message").textContent, /did not load/i);
+  assert.ok(q(d, "#submit-btn").disabled);
+  assert.equal(ctx.calls.length, 0);
+});
+
+test("SEND: without #submission-config the form stays review-only and never sends anything", () => {
+  const ctx = load({ reviewOnly: true });
+  const { w, d, calls } = ctx;
   fillValid(w, d);
   submit(w, d);
   const btn = q(d, "#submit-btn");
-  assert.ok(btn.disabled);
-  assert.equal(btn.getAttribute("aria-disabled"), "true");
-  assert.match(btn.textContent, /not enabled yet/i);
-  btn.disabled = false; // even if a user force-enabled it in dev tools
+  assert.ok(!q(d, "#review-panel").hidden);
+  btn.disabled = false; // even if force-enabled in dev tools
   btn.click();
   assert.match(q(d, "#form-status").textContent, /not enabled/i);
-  assert.deepEqual(calls, [], "no network request of any kind");
-  assert.match(q(d, "#submit-disabled-note").textContent, /not enabled yet/i);
+  assert.deepEqual(calls, []);
+  assert.equal(ctx.widget.renders.length, 0, "no Turnstile widget");
+});
+
+test("SEND: the only network code is the single POST in the form script, and the page offers no HTML form action", () => {
   const src = readFileSync(join(siteRoot, "assets/js/meetings-form.js"), "utf8");
-  assert.ok(!/\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|\.submit\(\)/.test(src), "form script contains no network code");
+  assert.equal((src.match(/\bfetch\s*\(/g) || []).length, 1, "one fetch call");
+  assert.ok(!/XMLHttpRequest|sendBeacon|WebSocket|\.submit\(\)|localStorage/.test(src));
+  const { d } = load();
   assert.equal(q(d, "#submit-form").getAttribute("action"), null);
+  const cfgEl = q(d, "#submission-config");
+  assert.equal(cfgEl.getAttribute("data-endpoint"), ENDPOINT);
+  assert.ok(!/staging|localhost/i.test(html), "no staging or local address in the page");
+  assert.ok(!/secret|private[_ -]?key/i.test(cfgEl.outerHTML), "only public values in the config element");
+});
+
+test("SEND: Propose another meeting returns to an empty form", async () => {
+  const ctx = load({ fetchImpl: () => reply(201, OK_REPLY) });
+  toReview(ctx);
+  solve(ctx.widget);
+  q(ctx.d, "#submit-btn").click();
+  await tick();
+  q(ctx.d, "#another-btn").click();
+  assert.ok(!q(ctx.d, "#submit-form").hidden);
+  assert.ok(q(ctx.d, "#success-panel").hidden);
+  assert.equal(q(ctx.d, "#f-title").value, "");
+  assert.ok(q(ctx.d, "#review-panel").hidden);
 });
 
 // --------------------------------------------------------------------- privacy
@@ -572,6 +772,7 @@ test("USABILITY: the page links back to the calendar and uses the shared layout"
 });
 
 // --------------------------------------------------------------------- report
+await Promise.all(pending);
 let failed = 0;
 for (const [ok, name, err] of results) {
   if (ok) console.log("  ok   " + name);
