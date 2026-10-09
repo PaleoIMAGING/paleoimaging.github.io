@@ -1,0 +1,19 @@
+# Proposed through the meetings submission form (request 1579239660fbd9fb).
+# Awaiting maintainer review; remove these two comment lines when approving.
+schema_version: 2
+id: "test-paleoimaging-portal-acceptance-test-20261112-035cdfa0"
+title: "[TEST] PaleoIMAGING Portal Acceptance Test"
+description: "Fictional meeting created exclusively to validate the production submission, approval and calendar publication workflow. Not a real event."
+wgs:
+  - "wg4"
+type: "wg-meeting"
+format: "online"
+start: "2026-11-12T14:00"
+end: "2026-11-12T15:00"
+timezone: "Europe/Berlin"
+platform: "Zoom"
+access: "public"
+url: "https://example.org/paleoimaging-test"
+organizers:
+  - name: "Andre Belem"
+    affiliation: "UFF/LAM+"

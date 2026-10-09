@@ -6,4 +6,31 @@ METHOD:PUBLISH
 X-WR-CALNAME:PaleoIMAGING meetings
 REFRESH-INTERVAL;VALUE=DURATION:P1D
 X-PUBLISHED-TTL:P1D
+BEGIN:VTIMEZONE
+TZID:Europe/Berlin
+BEGIN:STANDARD
+DTSTART:20261110T140000
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0100
+TZNAME:GMT+1
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:test-paleoimaging-portal-acceptance-test-20261112-035cdfa0@paleoimaging
+ .github.io
+DTSTAMP:20261009T023424Z
+SEQUENCE:0
+DTSTART;TZID=Europe/Berlin:20261112T140000
+DTEND;TZID=Europe/Berlin:20261112T150000
+SUMMARY:[TEST] PaleoIMAGING Portal Acceptance Test
+DESCRIPTION:Fictional meeting created exclusively to validate the productio
+ n submission\, approval and calendar publication workflow. Not a real even
+ t.\n\nhttps://paleoimaging.github.io/meetings/#test-paleoimaging-portal-ac
+ ceptance-test-20261112-035cdfa0
+LOCATION:Online (Zoom)
+CATEGORIES:WG4
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+URL:https://example.org/paleoimaging-test
+END:VEVENT
 END:VCALENDAR
