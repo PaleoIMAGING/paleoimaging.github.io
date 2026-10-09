@@ -43,7 +43,7 @@
 
   var DRAFT_KEY ="paleoimaging.meetings.submit.draft.v1";
   var TEXT_KEYS = ["title", "description", "type", "date", "startTime", "endTime", "endDate", "timezone", "tzOther",
-    "recFreq", "recInterval", "recCount", "recUntil", "recExceptions", "venue", "city", "country", "address",
+    "recFreq", "recMonthly", "recInterval", "recCount", "recUntil", "recExceptions", "venue", "city", "country", "address",
     "platform", "url", "registrationUrl", "accessNote"];
   var UNIT = { daily: "day(s)", weekly: "week(s)", monthly: "month(s)" };
 
@@ -235,6 +235,11 @@
       hint.textContent = formatOffset(core.zoneOffset(at, tz)) + " on " + when + (day ? "" : " (the offset on your meeting date may differ)") + ".";
     } else hint.textContent = "";
     $("rec-unit").textContent = values.recFreq !== "none" && UNIT[values.recFreq] ? "Repeats every " + (values.recInterval || "1") + " " + UNIT[values.recFreq] + "." : "";
+    var mh = $("h-recMonthly");
+    var code = model.ordinalCode(values.date);
+    mh.textContent = values.recMonthly === "weekday"
+      ? (code ? "Repeats on the " + core.ordinalDayLabel(code) + " of every month, taken from your start date." : "Choose the start date first; the weekday is taken from it.")
+      : (values.date ? "Repeats on day " + Number(values.date.slice(8, 10)) + " of every month." : "");
     var d = field("description");
     $("c-description").textContent = d.value.length + " / " + cfg.limits.description;
   }

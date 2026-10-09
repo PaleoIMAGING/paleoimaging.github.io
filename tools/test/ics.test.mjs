@@ -96,6 +96,22 @@ test("weekly series carry WKST, until becomes an exact UTC bound, exceptions bec
   assert.match(out, /EXDATE;TZID=Asia\/Tokyo:20261124T140000\r\n/);
 });
 
+test("monthly ordinal weekday becomes BYDAY=2TH and agrees with an independent parser", () => {
+  const m = {
+    id: "t", title: "T", wgs: ["wg1"], format: "online", access: "public", url: "https://example.org/x",
+    start: "2026-11-12T12:30", end: "2026-11-12T13:30", timezone: "Europe/Rome",
+    recurrence: { freq: "monthly", byday: ["2TH"], until: "2027-01-31" }
+  };
+  const out = ics.buildCalendar([m], config, { stamp: STAMP });
+  assert.match(out, /RRULE:FREQ=MONTHLY;INTERVAL=1;BYDAY=2TH;UNTIL=20270114T113000Z\r\n/);
+  const ev = new ICAL.Event(new ICAL.Component(ICAL.parse(out)).getFirstSubcomponent("vevent"));
+  const it = ev.iterator();
+  const theirs = [];
+  for (let t = it.next(); t; t = it.next()) theirs.push(t.toJSDate().getTime());
+  assert.deepEqual(theirs, core.expandOccurrences(m).map((o) => o.startMs));
+  assert.equal(theirs.length, 3);
+});
+
 test("private joins never reach the feed; cancelled maps to STATUS:CANCELLED", () => {
   assert.ok(!feed.includes("private.example"));
   const cancelled = feed.split("BEGIN:VEVENT").find((b) => b.includes("sample-wg3-cancelled-tutorial"));

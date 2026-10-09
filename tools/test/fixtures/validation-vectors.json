@@ -561,7 +561,7 @@
       ]
     },
     {
-      "name": "byday on monthly",
+      "name": "plain weekday on monthly is rejected (needs an ordinal)",
       "patch": {
         "recurrence": {
           "freq": "monthly",
@@ -572,7 +572,81 @@
         }
       },
       "expect": [
-        "only valid for weekly"
+        "recurrence.byday"
+      ]
+    },
+    {
+      "name": "byday on daily",
+      "patch": {
+        "recurrence": {
+          "freq": "daily",
+          "count": 3,
+          "byday": [
+            "2TU"
+          ]
+        }
+      },
+      "expect": [
+        "only valid for weekly and monthly"
+      ]
+    },
+    {
+      "name": "monthly second weekday is valid when the first meeting falls on it",
+      "patch": {
+        "recurrence": {
+          "freq": "monthly",
+          "count": 3,
+          "byday": [
+            "2TU"
+          ]
+        }
+      },
+      "expect": []
+    },
+    {
+      "name": "monthly ordinal weekday must match the first meeting",
+      "patch": {
+        "recurrence": {
+          "freq": "monthly",
+          "count": 3,
+          "byday": [
+            "2TH"
+          ]
+        }
+      },
+      "expect": [
+        "first meeting must fall on the second Thursday"
+      ]
+    },
+    {
+      "name": "monthly ordinal weekday must be one entry",
+      "patch": {
+        "recurrence": {
+          "freq": "monthly",
+          "count": 3,
+          "byday": [
+            "2TU",
+            "3TU"
+          ]
+        }
+      },
+      "expect": [
+        "must be one ordinal weekday"
+      ]
+    },
+    {
+      "name": "monthly ordinal out of range",
+      "patch": {
+        "recurrence": {
+          "freq": "monthly",
+          "count": 3,
+          "byday": [
+            "5TU"
+          ]
+        }
+      },
+      "expect": [
+        "must be one ordinal weekday"
       ]
     },
     {

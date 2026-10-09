@@ -177,7 +177,11 @@
         if (r.until !== undefined && r.count !== undefined) err("recurrence", "use either until or count, not both");
         if (R.require_end && r.until === undefined && r.count === undefined) err("recurrence", "needs until or count");
         if (r.byday !== undefined) {
-          if (r.freq !== "weekly") err("recurrence.byday", "only valid for weekly series");
+          if (r.freq === "monthly") {
+            // One ordinal weekday, e.g. ["2TH"] = second Thursday (-1 = last); the first meeting must fall on it.
+            if (!Array.isArray(r.byday) || r.byday.length !== 1 || !core.parseOrdinalDay(r.byday[0])) err("recurrence.byday", 'must be one ordinal weekday such as ["2TH"] (1 to 4, or -1 for last)');
+            else if (s && !core.matchesOrdinalDay(s, r.byday[0])) err("recurrence.byday", "the first meeting must fall on the " + core.ordinalDayLabel(r.byday[0]) + " of its month");
+          } else if (r.freq !== "weekly") err("recurrence.byday", "only valid for weekly and monthly series");
           else if (!Array.isArray(r.byday) || !r.byday.length || r.byday.some(function (d) { return WEEKDAYS.indexOf(d) === -1; })) err("recurrence.byday", "must be a list of " + WEEKDAYS.join(", "));
         }
         if (r.exceptions !== undefined && (!Array.isArray(r.exceptions) || r.exceptions.length > 100 || r.exceptions.some(function (d) { return !core.parseDate(d); }))) err("recurrence.exceptions", "must be a list of quoted dates");

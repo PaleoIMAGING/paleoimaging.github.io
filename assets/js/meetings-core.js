@@ -15,6 +15,14 @@
 
   var DAY = 86400000;
   var WEEKDAYS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+  var WEEKDAY_NAME = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  var ORDINAL_WORD = { "1": "first", "2": "second", "3": "third", "4": "fourth", "-1": "last" };
+
+  /* "2TH" -> "second Thursday" */
+  function ordinalDayLabel(code) {
+    var o = parseOrdinalDay(code);
+    return o ? ORDINAL_WORD[o.n] + " " + WEEKDAY_NAME[o.wd] : "";
+  }
   var LOCAL_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
   var DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
@@ -111,6 +119,29 @@
     return new Date(Date.UTC(y, mo, 0)).getUTCDate();
   }
 
+  /* "2TH" -> { n: 2, wd: 4 } (wd = getUTCDay number); n is 1..4 or -1 for the last. null if malformed. */
+  function parseOrdinalDay(code) {
+    var m = /^(-1|[1-4])(SU|MO|TU|WE|TH|FR|SA)$/.exec(code);
+    return m ? { n: Number(m[1]), wd: WEEKDAYS.indexOf(m[2]) } : null;
+  }
+
+  /* Day of the month of the nth (or last) weekday. */
+  function nthWeekdayOfMonth(y, mo, o) {
+    if (o.n > 0) {
+      var first = new Date(Date.UTC(y, mo - 1, 1)).getUTCDay();
+      return 1 + ((o.wd - first + 7) % 7) + (o.n - 1) * 7;
+    }
+    var dim = daysInMonth(y, mo);
+    var lastWd = new Date(Date.UTC(y, mo - 1, dim)).getUTCDay();
+    return dim - ((lastWd - o.wd + 7) % 7);
+  }
+
+  /* Does a local date ("YYYY-MM-DD..." parsed) fall on that ordinal weekday? */
+  function matchesOrdinalDay(s, code) {
+    var o = parseOrdinalDay(code);
+    return !!o && nthWeekdayOfMonth(s.y, s.mo, o) === s.d;
+  }
+
   /* Wall-clock start times (ms, "as UTC") of every occurrence before
    * exceptions are removed. Semantics follow RFC 5545 where it matters:
    * COUNT includes excluded dates, and months without the start day are
@@ -156,13 +187,15 @@
         }
       }
     } else if (rec.freq === "monthly") {
+      var nth = rec.byday && rec.byday.length ? parseOrdinalDay(rec.byday[0]) : null; // "2TH" = second Thursday
       for (var n = 0; n < hardLimit * 4; n++) {
         var idx = (s.mo - 1) + n * interval;
         var y = s.y + Math.floor(idx / 12);
         var mo = (idx % 12) + 1;
         if (Date.UTC(y, mo - 1, 1) > until) break;
-        if (s.d > daysInMonth(y, mo)) continue;
-        if (!push(Date.UTC(y, mo - 1, s.d) + tod)) break;
+        var day = nth ? nthWeekdayOfMonth(y, mo, nth) : s.d;
+        if (day > daysInMonth(y, mo)) continue;
+        if (!push(Date.UTC(y, mo - 1, day) + tod)) break;
       }
     } else {
       out.push(base);
@@ -212,6 +245,8 @@
     var unit = { daily: "day", weekly: "week", monthly: "month" }[rec.freq] || rec.freq;
     var every = n === 1 ? "Every " + unit : "Every " + n + " " + unit + "s";
     if (rec.freq === "weekly" && rec.byday && rec.byday.length) every += " (" + rec.byday.join(", ") + ")";
+    var o = rec.freq === "monthly" && rec.byday && rec.byday.length ? parseOrdinalDay(rec.byday[0]) : null;
+    if (o) every += " on the " + ORDINAL_WORD[o.n] + " " + WEEKDAY_NAME[o.wd];
     if (rec.count) every += ", " + rec.count + " meetings";
     else if (rec.until) every += ", until " + rec.until;
     return every;
@@ -226,6 +261,10 @@
     wallString: wallString,
     expandOccurrences: expandOccurrences,
     classify: classify,
-    describeRecurrence: describeRecurrence
+    describeRecurrence: describeRecurrence,
+    parseOrdinalDay: parseOrdinalDay,
+    nthWeekdayOfMonth: nthWeekdayOfMonth,
+    matchesOrdinalDay: matchesOrdinalDay,
+    ordinalDayLabel: ordinalDayLabel
   };
 });

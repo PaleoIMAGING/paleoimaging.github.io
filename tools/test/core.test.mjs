@@ -63,6 +63,26 @@ test("monthly series skips months without the start day (RFC 5545)", () => {
   assert.deepEqual(starts(m), ["2026-01-31T10:00", "2026-03-31T10:00", "2026-05-31T10:00", "2026-07-31T10:00"]);
 });
 
+test("monthly ordinal weekday: second Thursday, not the 12th (Petra's series)", () => {
+  const m = base({ start: "2026-11-12T12:30", end: "2026-11-12T13:30", timezone: "Europe/Rome", recurrence: { freq: "monthly", byday: ["2TH"], until: "2027-01-31" } });
+  assert.deepEqual(starts(m), ["2026-11-12T12:30", "2026-12-10T12:30", "2027-01-14T12:30"]);
+  assert.equal(core.describeRecurrence(m.recurrence), "Every month on the second Thursday, until 2027-01-31");
+});
+
+test("monthly ordinal weekday: first, fourth and last occurrences, intervals, year ends", () => {
+  const rec = (day, byday, extra) => base({ start: day + "T10:00", end: day + "T11:00", recurrence: { freq: "monthly", byday: [byday], ...extra } });
+  assert.deepEqual(starts(rec("2026-11-02", "1MO", { count: 3 })), ["2026-11-02T10:00", "2026-12-07T10:00", "2027-01-04T10:00"]);
+  assert.deepEqual(starts(rec("2026-11-26", "4TH", { count: 2 })), ["2026-11-26T10:00", "2026-12-24T10:00"]);
+  assert.deepEqual(starts(rec("2026-10-30", "-1FR", { count: 3 })), ["2026-10-30T10:00", "2026-11-27T10:00", "2026-12-25T10:00"]);
+  assert.deepEqual(starts(rec("2026-11-12", "2TH", { interval: 3, count: 3 })), ["2026-11-12T10:00", "2027-02-11T10:00", "2027-05-13T10:00"]);
+  assert.equal(core.nthWeekdayOfMonth(2028, 2, core.parseOrdinalDay("-1TU")), 29); // leap year
+});
+
+test("until, exceptions and COUNT work with ordinal weekdays", () => {
+  const m = base({ start: "2026-11-12T10:00", end: "2026-11-12T11:00", recurrence: { freq: "monthly", byday: ["2TH"], count: 3, exceptions: ["2026-12-10"] } });
+  assert.deepEqual(starts(m), ["2026-11-12T10:00", "2027-01-14T10:00"]);
+});
+
 test("until is inclusive and exceptions are removed but still counted", () => {
   assert.deepEqual(starts(base({ recurrence: { freq: "weekly", until: "2026-11-24" } })),
     ["2026-11-10T14:00", "2026-11-17T14:00", "2026-11-24T14:00"]);
