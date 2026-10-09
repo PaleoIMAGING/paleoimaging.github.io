@@ -3,6 +3,7 @@ id: "regular-sc-and-wg-leads-meeting-20261112-478b972f"
 title: "Regular SC and WG leads meeting"
 description: "The steering committee meets regularly, every second Thursday of each month, together with the leads of the working groups."
 wgs:
+  - "sc"
   - "wg1"
   - "wg2"
   - "wg3"
