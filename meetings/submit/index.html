@@ -146,6 +146,16 @@ permalink: /meetings/submit/
         <p class="error" id="e-recEnd" data-error-for="recEnd" hidden></p>
       </fieldset>
 
+      <div class="field" data-field="recMonthly" data-show="recMonthly" hidden>
+        <label for="f-recMonthly">Repeat on</label>
+        <select id="f-recMonthly" name="recMonthly" aria-describedby="h-recMonthly e-recMonthly">
+          <option value="date">The same date each month (for example the 12th)</option>
+          <option value="weekday">The same weekday each month (for example the second Thursday)</option>
+        </select>
+        <p class="hint hint--live" id="h-recMonthly" aria-live="polite"></p>
+        <p class="error" id="e-recMonthly" data-error-for="recMonthly" hidden></p>
+      </div>
+
       <fieldset class="field group" data-field="recByday" id="f-recByday" data-group="recByday" data-show="recByday" aria-describedby="h-recByday e-recByday" hidden>
         <legend>On these weekdays <span class="optional">(optional)</span></legend>
         <p class="hint" id="h-recByday">Leave empty to repeat on the same weekday as the first meeting.</p>

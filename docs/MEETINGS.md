@@ -47,6 +47,9 @@ recurrence:                     # optional
   interval: 2                   # every 2 weeks
   count: 8                      # or `until: "2027-06-30"` (not both)
   byday: [MO, TH]               # weekly only
+                                # monthly: one ordinal weekday, e.g. byday: ["2TH"] = second Thursday
+                                # (1-4, or -1 = last); the first meeting must fall on it. Without byday, a
+                                # monthly series repeats on the same date (e.g. the 12th) each month.
   exceptions: ["2027-02-09"]    # skipped dates (still count toward `count`)
 links:                          # agenda, minutes, recording
   - label: "Minutes"

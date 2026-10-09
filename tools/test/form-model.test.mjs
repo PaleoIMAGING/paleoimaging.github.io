@@ -47,6 +47,7 @@ test("conditional fields: recurrence and multi-day inputs", () => {
   assert.equal(vis({}).recInterval, false);
   assert.equal(vis({ recFreq: "weekly" }).recByday, true);
   assert.equal(vis({ recFreq: "monthly" }).recByday, false);
+  assert.deepEqual([vis({ recFreq: "monthly" }).recMonthly, vis({ recFreq: "weekly" }).recMonthly], [true, false]);
   assert.deepEqual([vis({ recFreq: "daily", recEnd: "count" }).recCount, vis({ recFreq: "daily", recEnd: "count" }).recUntil], [true, false]);
   assert.deepEqual([vis({ recFreq: "daily", recEnd: "until" }).recCount, vis({ recFreq: "daily", recEnd: "until" }).recUntil], [false, true]);
   assert.equal(vis({ multiDay: true }).endDate, true);
@@ -84,6 +85,20 @@ test("PRIVACY: the record can never carry contact details; the form has no email
 test("PRIVACY: join links pasted into prose are rejected (access note, description, title)", () => {
   for (const over of [{ access: "private", accessNote: "Join: https://zoom.example/j/1", url: "" }, { description: "Use zoom.us/j/12345" }, { title: "Meet at www.example.org" }])
     assert.ok(errorsFor(filled(over)).some((e) => e.includes("web addresses")), JSON.stringify(over));
+});
+
+test("monthly 'same weekday' is derived from the start date, so it can never disagree with it", () => {
+  const rec = (date, over = {}) => model.buildRecord(filled({ date, recFreq: "monthly", recEnd: "count", recCount: "3", recMonthly: "weekday", ...over }), config);
+  assert.deepEqual(rec("2026-11-12").recurrence.byday, ["2TH"]);
+  assert.deepEqual(rec("2026-11-02").recurrence.byday, ["1MO"]);
+  assert.deepEqual(rec("2026-11-26").recurrence.byday, ["4TH"]);
+  assert.deepEqual(rec("2026-11-30").recurrence.byday, ["-1MO"], "a fifth weekday means the last one");
+  for (const d of ["2026-11-12", "2026-11-30", "2027-02-01"]) assert.deepEqual(validator.validate(rec(d), config), [], d);
+  // "same date" (the default) and non-monthly series never carry an ordinal.
+  assert.equal(model.buildRecord(filled({ recFreq: "monthly", recCount: "3" }), config).recurrence.byday, undefined);
+  assert.equal(model.buildRecord(filled({ recFreq: "weekly", recCount: "3", recMonthly: "weekday" }), config).recurrence.byday, undefined);
+  assert.equal(model.ordinalCode("2026-02-30"), "");
+  assert.equal(model.ordinalCode(""), "");
 });
 
 test("recurrence is built from the answers", () => {

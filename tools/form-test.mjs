@@ -216,6 +216,10 @@ test("CONDITIONAL: recurrence reveals interval, end condition, weekdays and skip
   assert.ok(visible(d, "recUntil") && !visible(d, "recCount"));
   type(w, d, "recFreq", "monthly");
   assert.ok(!visible(d, "recByday"), "weekdays only for weekly");
+  assert.ok(visible(d, "recMonthly"), "monthly offers date-or-weekday");
+  type(w, d, "recFreq", "weekly");
+  assert.ok(!visible(d, "recMonthly"));
+  type(w, d, "recFreq", "monthly");
   assert.match(q(d, "#rec-unit").textContent, /month/);
   type(w, d, "recFreq", "none");
   assert.ok(!visible(d, "recEnd"));
@@ -411,6 +415,17 @@ test("REVIEW: recurring proposals preview as a series", () => {
   submit(w, d);
   assert.match(q(d, "#preview-list").textContent, /Every 2 weeks, 6 meetings/);
   assert.deepEqual(JSON.parse(q(d, "#record-json").textContent).recurrence, { freq: "weekly", interval: 2, count: 6 });
+});
+
+test("REVIEW: 'same weekday each month' previews and submits as the second Thursday", () => {
+  const { w, d } = load();
+  fillValid(w, d);
+  type(w, d, "date", "2026-11-12");
+  type(w, d, "recFreq", "monthly"); type(w, d, "recMonthly", "weekday"); type(w, d, "recInterval", "1"); type(w, d, "recCount", "3");
+  assert.match(q(d, "#h-recMonthly").textContent, /second Thursday of every month/);
+  submit(w, d);
+  assert.match(q(d, "#preview-list").textContent, /Every month on the second Thursday, 3 meetings/);
+  assert.deepEqual(JSON.parse(q(d, "#record-json").textContent).recurrence, { freq: "monthly", interval: 1, count: 3, byday: ["2TH"] });
 });
 
 test("REVIEW: a series without an end is rejected with a clear message", () => {

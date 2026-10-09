@@ -156,6 +156,8 @@
     if (r.freq === "weekly") {
       if (r.byday && r.byday.length) parts.push("BYDAY=" + r.byday.join(","));
       parts.push("WKST=MO");
+    } else if (r.freq === "monthly" && r.byday && r.byday.length) {
+      parts.push("BYDAY=" + r.byday[0]); // ordinal weekday, e.g. 2TH
     }
     if (r.count) parts.push("COUNT=" + r.count);
     else if (r.until && occs.length) parts.push("UNTIL=" + utc(occs[occs.length - 1].startMs)); // exact UTC bound

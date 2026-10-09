@@ -33,7 +33,7 @@
       title: "", description: "", type: "", wgs: [],
       date: "", startTime: "", endTime: "", multiDay: false, endDate: "",
       timezone: "", tzOther: "",
-      recFreq: "none", recInterval: "1", recEnd: "count", recCount: "", recUntil: "", recByday: [], recExceptions: "",
+      recFreq: "none", recInterval: "1", recEnd: "count", recCount: "", recUntil: "", recByday: [], recMonthly: "date", recExceptions: "",
       format: "", venue: "", city: "", country: "", address: "", platform: "",
       access: "", url: "", registrationUrl: "", accessNote: "",
       organizers: [emptyOrganizer()]
@@ -58,6 +58,7 @@
       recCount: !!hasRec && values.recEnd === "count",
       recUntil: !!hasRec && values.recEnd === "until",
       recByday: values.recFreq === "weekly",
+      recMonthly: values.recFreq === "monthly",
       recExceptions: !!hasRec,
       location: !!fmt && fmt.requires.some(function (p) { return p.indexOf("location.") === 0; }),
       platform: onlineCapable,
@@ -91,6 +92,18 @@
     return d ? slug + "-" + d : slug;
   }
 
+  var CODES = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+
+  /* "2026-11-12" -> "2TH" (second Thursday); a 5th weekday of a month becomes "-1" (last). "" if invalid. */
+  function ordinalCode(date) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+    if (!m) return "";
+    var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+    if (d.getUTCMonth() !== +m[2] - 1 || d.getUTCDate() !== +m[3]) return "";
+    var n = Math.ceil(+m[3] / 7);
+    return (n > 4 ? "-1" : String(n)) + CODES[d.getUTCDay()];
+  }
+
   /* Form values -> meeting record. Irrelevant (hidden) inputs never leak in. */
   function buildRecord(values, config) {
     var vis = visibility(values, config);
@@ -115,6 +128,10 @@
       if (vis.recUntil && trimmed(values.recUntil)) r.until = trimmed(values.recUntil);
       if (vis.recByday && values.recByday && values.recByday.length) {
         r.byday = WEEKDAYS.filter(function (d) { return values.recByday.indexOf(d) > -1; });
+      }
+      if (vis.recMonthly && values.recMonthly === "weekday") {
+        var code = ordinalCode(trimmed(values.date)); // e.g. 2TH, from the first meeting's date
+        if (code) r.byday = [code];
       }
       var ex = trimmed(values.recExceptions).split(/[\s,;]+/).filter(Boolean);
       if (ex.length) r.exceptions = ex;
@@ -172,6 +189,7 @@
       default:
     }
     if ((m = /^location\.(\w+)$/.exec(field))) return LOCATION_CONTROL[m[1]] || "general";
+    if (field === "recurrence.byday" && values.recFreq === "monthly") return "recMonthly";
     if ((m = /^recurrence\.(\w+)$/.exec(field))) return RECURRENCE_CONTROL[m[1]] || "general";
     if ((m = /^organizers\[(\d+)\]\.(\w+)$/.exec(field))) {
       // The record only holds non-empty rows; map its position back to the form row.
@@ -243,6 +261,7 @@
     defaultValues: defaultValues,
     visibility: visibility,
     buildRecord: buildRecord,
+    ordinalCode: ordinalCode,
     provisionalId: provisionalId,
     controlFor: controlFor,
     humanize: humanize,
