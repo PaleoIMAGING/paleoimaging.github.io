@@ -1,0 +1,17 @@
+# SAMPLE RECORD: illustrative only, not a real PaleoIMAGING event.
+schema_version: 1
+id: sample-sc-steering-committee
+sample: true
+title: "[SAMPLE] SC Steering Committee call"
+description: "Sample Steering Committee meeting, open to invited members only."
+wgs: [sc]
+type: other
+format: online
+start: "2027-02-10T15:00"
+end: "2027-02-10T16:00"
+timezone: "Europe/Warsaw"
+access: private
+access_note: "Link sent to Steering Committee members"
+organizers:
+  - name: "Sample Organizer"
+    affiliation: "Example University"
