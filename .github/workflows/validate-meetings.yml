@@ -1,15 +1,9 @@
 name: Validate meetings
 
+# Runs on every pull request (no path filter) so that it can be a required status check
+# in the "Protect main" ruleset: a required check that never starts would block the merge.
 on:
   pull_request:
-    paths:
-      - "_data/meetings/**"
-      - "_data/meetings_config.yml"
-      - "meetings/feed.ics"
-      - "assets/js/meetings-*.js"
-      - "meetings/**"
-      - "_includes/**"
-      - "tools/**"
   workflow_dispatch:
 
 permissions:
