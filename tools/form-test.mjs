@@ -241,6 +241,17 @@ test("WGs: General excludes specific groups, and vice versa", () => {
   assert.deepEqual(qa(d, 'input[name="wgs"]:checked').map((i) => i.value).sort(), ["wg2", "wg4"]);
 });
 
+test("SC is offered, combines with WGs, and General excludes it", () => {
+  const { w, d } = load();
+  assert.ok(q(d, 'input[name="wgs"][value="sc"]'), "SC checkbox missing");
+  check(w, d, "wgs", "sc"); check(w, d, "wgs", "wg2");
+  assert.deepEqual(qa(d, 'input[name="wgs"]:checked').map((i) => i.value).sort(), ["sc", "wg2"]);
+  check(w, d, "wgs", "general");
+  assert.deepEqual(qa(d, 'input[name="wgs"]:checked').map((i) => i.value), ["general"]);
+  check(w, d, "wgs", "sc");
+  assert.deepEqual(qa(d, 'input[name="wgs"]:checked').map((i) => i.value), ["sc"]);
+});
+
 test("options come from the config (types, WGs, formats, access, zones)", () => {
   const { d } = load();
   const vals = (sel) => qa(d, sel).map((o) => o.value).filter(Boolean);

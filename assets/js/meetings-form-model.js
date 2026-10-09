@@ -210,7 +210,7 @@
     if ((m = /^produces more than (\d+) meetings$/.exec(message))) return "This series is too long (at most " + m[1] + " meetings).";
     if (message === "produces no meetings") return "This series produces no meetings; check the dates.";
     if (message.indexOf("must be a list of 1 to") === 0) return "Add at least one organizer.";
-    if (field === "wgs" && message.indexOf("non-empty list") > -1) return "Choose at least one Working Group, or General community.";
+    if (field === "wgs" && message.indexOf("non-empty list") > -1) return "Choose at least one Working Group or the Steering Committee, or General community.";
     if (message.indexOf("cannot be combined") > -1) return "“General community” cannot be combined with a specific Working Group.";
     if (/^required for /.test(message)) return "This field is required for the chosen format or access level.";
     if (message.indexOf("must not be published") === 0) return "A join link must not be published for this access level.";

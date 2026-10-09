@@ -94,10 +94,10 @@ if (mode === "hostile") {
   ok(w.document.getElementById("filters").hidden, "filters should stay hidden when empty");
   ok(titles(w).length === 0, "no cards expected");
 } else {
-  ok(nEvents === 8, "expected 8 events in the sample feed, got " + nEvents);
+  ok(nEvents === 9, "expected 9 events in the sample feed, got " + nEvents);
   const w = load("https://paleoimaging.github.io/meetings/", html);
   const up = titles(w);
-  ok(up.length === 11 && /WG2 interlab comparison call/.test(up[0]), "upcoming list unexpected: " + up.length);
+  ok(up.length === 12 && /WG2 interlab comparison call/.test(up[0]), "upcoming list unexpected: " + up.length);
   ok(/Sample data/.test(html), "sample banner missing");
   w.document.querySelector('[data-view="past"]').click();
   ok(titles(w).length === 4, "past list unexpected");
@@ -106,6 +106,9 @@ if (mode === "hostile") {
   sel.value = "wg2";
   sel.dispatchEvent(new w.Event("change"));
   ok(titles(w).length === 4, "WG2 filter unexpected");
+  sel.value = "sc";
+  sel.dispatchEvent(new w.Event("change"));
+  ok(titles(w).length === 1 && /SC Steering Committee call/.test(titles(w)[0]), "SC filter unexpected: " + titles(w).join("; "));
   // Hostile query string must not create elements.
   const evil = load("https://paleoimaging.github.io/meetings/?q=%3Cimg%20src%3Dx%3E&wg=%3Cb%3E", html);
   ok(evil.document.querySelectorAll("#meeting-list img, #meeting-list b").length === 0, "query-string injection");
