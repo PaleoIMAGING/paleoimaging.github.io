@@ -421,7 +421,7 @@ test("REVIEW: 'same weekday each month' previews and submits as the second Thurs
   const { w, d } = load();
   fillValid(w, d);
   type(w, d, "date", "2026-11-12");
-  type(w, d, "recFreq", "monthly"); type(w, d, "recMonthly", "weekday"); type(w, d, "recCount", "3");
+  type(w, d, "recFreq", "monthly"); type(w, d, "recMonthly", "weekday"); type(w, d, "recInterval", "1"); type(w, d, "recCount", "3");
   assert.match(q(d, "#h-recMonthly").textContent, /second Thursday of every month/);
   submit(w, d);
   assert.match(q(d, "#preview-list").textContent, /Every month on the second Thursday, 3 meetings/);
