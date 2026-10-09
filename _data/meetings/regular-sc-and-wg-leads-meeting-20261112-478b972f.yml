@@ -1,0 +1,23 @@
+schema_version: 2
+id: "regular-sc-and-wg-leads-meeting-20261112-478b972f"
+title: "Regular SC and WG leads meeting"
+description: "The steering committee meets regularly, every second Thursday of each month, together with the leads of the working groups."
+wgs:
+  - "sc"
+  - "wg1"
+  - "wg2"
+  - "wg3"
+  - "wg4"
+type: "wg-meeting"
+format: "online"
+start: "2026-11-12T12:30"
+end: "2026-11-12T13:30"
+timezone: "Europe/Rome"
+recurrence:
+  freq: "monthly"
+  until: "2027-01-14"
+platform: "zoom"
+access: "public"
+url: "https://unibe-ch.zoom.us/j/65951713501"
+organizers:
+  - name: "Petra Zahajská"
