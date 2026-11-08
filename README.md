@@ -28,5 +28,6 @@ Meeting proposals submitted through the website arrive as Pull Requests on `main
 ## Release history
 
 - **2026-11-08: website MVP published at the root URL** (PR #15, merge commit `8861217`). The separate preview site
-  used for community review (`meetings-staging-site`) has been retired; there is no permanent staging website.
+  used for community review (`meetings-staging-site`) was deleted together with the staging Worker; there is no
+  permanent staging website.
   Worker-side details: the private `meetings-portal` repository, `docs/STAGING-RETIREMENT.md`.
