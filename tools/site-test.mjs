@@ -34,6 +34,27 @@ const html = read("meetings/index.html");
 ok(/<meta name="robots" content="noindex/.test(html), "calendar page should be noindex until launch");
 ok(/Skip to content/.test(html), "layout missing");
 
+// Join Us: both entry points (header button, footer link) open a plain mailto: to the Mailman join address,
+// with no subject/body, and the instructions plus a copyable fallback address are visible in the page itself.
+{
+  const JOIN = "paleoimaging.pages-join@lists.unibe.ch";
+  const OLD = "listserv.unibe.ch/mailman/listinfo/paleoimaging.pages";
+  const pages = [["home", home], ["meetings", html]];
+  for (const [name, src] of pages) {
+    const links = [...src.matchAll(/<a\b[^>]*\bhref="(mailto:[^"]*)"[^>]*>([^<]*)<\/a>/g)];
+    const join = links.filter((l) => /^(Join Us|Join the mailing list)$/.test(l[2].trim()));
+    ok(join.length === 2, `${name}: expected the header "Join Us" and footer "Join the mailing list" links, found ${join.length}`);
+    for (const l of join) ok(l[1] === `mailto:${JOIN}`, `${name}: "${l[2]}" must be exactly mailto:${JOIN} (no subject or body), got ${l[1]}`);
+    ok(!/<a\b[^>]*class="btn"[^>]*listserv\.unibe\.ch/.test(src), `${name}: header button must not point to the University of Bern page`);
+    const joinHrefs = [...src.matchAll(/<a\b[^>]*\bhref="([^"]*)"[^>]*>(Join Us|Join the mailing list)<\/a>/g)];
+    ok(joinHrefs.every((l) => !l[1].includes(OLD)), `${name}: Join links must not use the old Mailman subscription page`);
+    ok((src.match(new RegExp(`<code class="join-address">${JOIN.replace(/\./g, "\\.")}</code>`, "g")) || []).length >= 1, `${name}: the address must be shown as copyable text in the footer`);
+    ok(/no subject or message/.test(src) && /spam folder/.test(src) && /does not open, send an empty email/.test(src), `${name}: instructions and fallback must be visible on the page`);
+    ok(/class="join-note"/.test(src), `${name}: footer instructions missing`);
+    ok(!/join-strip/.test(src) && !/<header[\s\S]*?no subject or message[\s\S]*?<\/header>/.test(src), `${name}: header must stay compact, without instruction text`);
+  }
+}
+
 // jsdom ignores CSS, so guard the rule that makes the `hidden` attribute win over display:grid/flex.
 ok(/\[hidden\]\s*\{\s*display:\s*none\s*!important/.test(read("assets/css/site.css")), "CSS must keep [hidden] effective");
 

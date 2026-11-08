@@ -11,7 +11,7 @@ Content is Markdown and YAML; there are no plugins beyond the GitHub Pages set.
 | Search | `search.json` (built index) and `assets/js/search.js`; pages with `noindex: true` are left out |
 | Imaging techniques (`/techniques/`) | `_data/techniques.yml`: one entry per technique (name, abbreviation, what it measures, why it matters, optional resource links and optional `image` with alt text, caption and credit; store images in `assets/images/techniques/`) |
 | Past events archive (`/meetings/archive/`) | `_data/past_events.yml`: one entry per event; fields are documented at the top of the file |
-| Join Us | Links directly to the Mailman list; there is no separate registration |
+| Join Us | `mailto:` link (header button and footer link) to the Mailman join address `paleoimaging.pages-join@lists.unibe.ch`, with visible instructions in the header strip and footer; the address is in `_includes/join-address.html`. No account, form or backend |
 
 Adding a past event: copy an entry in `_data/past_events.yml`, fill in only verified facts, and cite a source. Note
 materials that are expected but not yet public under `pending` (internal only, never shown on the site); when they are published, move them into `links`
