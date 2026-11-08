@@ -48,9 +48,10 @@ ok(/Skip to content/.test(html), "layout missing");
     ok(!/<a\b[^>]*class="btn"[^>]*listserv\.unibe\.ch/.test(src), `${name}: header button must not point to the University of Bern page`);
     const joinHrefs = [...src.matchAll(/<a\b[^>]*\bhref="([^"]*)"[^>]*>(Join Us|Join the mailing list)<\/a>/g)];
     ok(joinHrefs.every((l) => !l[1].includes(OLD)), `${name}: Join links must not use the old Mailman subscription page`);
-    ok((src.match(new RegExp(`<code class="join-address">${JOIN.replace(/\./g, "\.")}</code>`, "g")) || []).length >= 2, `${name}: the address must be shown as copyable text at both entry points`);
+    ok((src.match(new RegExp(`<code class="join-address">${JOIN.replace(/\./g, "\\.")}</code>`, "g")) || []).length >= 1, `${name}: the address must be shown as copyable text in the footer`);
     ok(/no subject or message/.test(src) && /spam folder/.test(src) && /does not open, send an empty email/.test(src), `${name}: instructions and fallback must be visible on the page`);
-    ok(/class="join-strip"/.test(src) && /class="join-note"/.test(src), `${name}: header and footer instructions missing`);
+    ok(/class="join-note"/.test(src), `${name}: footer instructions missing`);
+    ok(!/join-strip/.test(src) && !/<header[\s\S]*?no subject or message[\s\S]*?<\/header>/.test(src), `${name}: header must stay compact, without instruction text`);
   }
 }
 
