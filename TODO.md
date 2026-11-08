@@ -4,10 +4,21 @@ This file tracks website development and organization-wide coordination tasks. A
 
 These are implementation tasks and proposals for review, not additional scientific commitments agreed at the Gdańsk workshop. Repository creation, renaming, and configuration must be verified before marking tasks complete.
 
+## 0. Production release (website MVP)
+
+- [x] Community reviewed the preview and agreed to publish the new website now and improve incomplete content progressively (release prepared 2026-11-08).
+- [x] Release PR #15 prepared: WG4 standardised as "Data Formats" (page `/working-groups/wg4-dataformats/`), Core Group kept as a clearly marked placeholder, meetings records, feed and submission settings unchanged.
+- [ ] Merge PR #15 into `main` (needs the approving review required by the "Protect main" ruleset) and confirm the GitHub Pages deployment.
+- [ ] Validate https://paleoimaging.github.io/ after deployment (navigation, assets, meetings, feed, submission form).
+- [ ] After validation and explicit approval, delete the `PaleoIMAGING/meetings-staging-site` repository. No permanent staging site is kept; future work uses short-lived `feature/*` or `fix/*` branches, Pull Requests and CI.
+- [ ] Core Group: add members only once names, affiliations and roles are confirmed (`_data/core_group.yml`).
+- [ ] Review and improve About, Working Group and Techniques copy as the group provides feedback.
+- [ ] Add Resources, Tutorials, Community and map entries to the navigation when their content is ready (sections 5 to 7).
+
 ## 1. Inventory and agreed structure
 
 - [ ] Inspect the current local repositories, READMEs, website files, and links.
-- [ ] Confirm the WG4 rename from `wg4-community` to `wg4-datasets`, including its local directory and Git remote.
+- [ ] Confirm the WG4 rename from `wg4-community` to `wg4-dataformats` (WG4 is called "Data Formats" on the website), including its local directory and Git remote.
 - [ ] Confirm that the WG1, WG2, and WG3 repositories have been created and cloned.
 - [ ] Confirm that `paleoimaging.github.io` has been created and cloned.
 - [ ] Keep `Community-Hub` as the central community forum.
@@ -31,14 +42,14 @@ These are implementation tasks and proposals for review, not additional scientif
 
 ## 2. Jekyll website foundation
 
-- [ ] Create the Jekyll structure, configuration, dependency files, and layouts.
+- [x] Create the Jekyll structure, configuration, dependency files, and layouts.
 - [ ] Select a simple, accessible, responsive visual design.
 - [ ] Reuse the existing PaleoIMAGING logo and available assets.
 - [ ] Set the organization website URL and link handling consistently.
-- [ ] Create navigation: Home, About, Working Groups, Resources, Tutorials, News, and Community.
+- [x] Create navigation (first release: Home, About, Core Group, Working Groups, Techniques, Meetings, Where We Are, News, Search). Resources, Tutorials and Community entries are still to be added.
 - [ ] Add clear links to the PAGES PaleoIMAGING page, GitHub organization, and community forum.
 - [ ] Document local preview and build instructions in the website README.
-- [ ] Keep this checklist and internal development guidance out of generated website navigation; exclude them from the build where appropriate.
+- [x] Keep this checklist and internal development guidance out of generated website navigation; exclude them from the build where appropriate.
 
 ## 3. Organization profile and public content
 
@@ -52,11 +63,11 @@ These are implementation tasks and proposals for review, not additional scientif
 
 ## 4. Working group pages and workspaces
 
-- [ ] Create a Working Groups overview page.
-- [ ] Create WG1 — Standard materials.
-- [ ] Create WG2 — Interlab comparison.
-- [ ] Create WG3 — Best practices and workflows.
-- [ ] Create WG4 — Data Formats.
+- [x] Create a Working Groups overview page.
+- [x] Create WG1 — Standard materials.
+- [x] Create WG2 — Interlab comparison.
+- [x] Create WG3 — Best practices and workflows.
+- [x] Create WG4 — Data Formats.
 - [ ] Use a consistent page structure: purpose, activities, contacts, resources, and participation links.
 - [ ] Prepare consistent README templates for the four WG repositories.
 - [ ] Use the official Gdańsk minutes as the source for documented outcomes and assigned actions.
@@ -117,9 +128,9 @@ These are implementation tasks and proposals for review, not additional scientif
 - [ ] Check navigation, internal links, external links, and renamed repository references.
 - [ ] Check readability, keyboard navigation, mobile layout, and image alternative text.
 - [ ] Verify the map and tutorial links in the preview.
-- [ ] Prepare a draft for Petra and the group to review.
+- [x] Prepare a draft for Petra and the group to review.
 - [ ] Record feedback and outstanding content or governance decisions here.
-- [ ] Configure GitHub Pages publication after draft review.
+- [x] Configure GitHub Pages publication after draft review.
 - [ ] Verify the published website and document the update workflow.
 
 ## 10. Decisions still to confirm

@@ -38,8 +38,8 @@
   measures: The internal structure of a sample in three dimensions, shown as variations in density.
   relevance: Density variations can record geohazards such as volcanic eruptions, earthquakes and floods.
   resources:
-    - label: Working Group 4, datasets
-      url: /working-groups/wg4-datasets/
+    - label: Working Group 4, data formats
+      url: /working-groups/wg4-dataformats/
 
 - id: msi
   abbr: MSI
@@ -47,5 +47,5 @@
   measures: The spatial distribution of molecules across a sample surface.
   relevance: Mapping organic biomarkers, such as proxies for temperature or biomass burning, adds molecular information at high spatial resolution.
   resources:
-    - label: Working Group 4, datasets
-      url: /working-groups/wg4-datasets/
+    - label: Working Group 4, data formats
+      url: /working-groups/wg4-dataformats/

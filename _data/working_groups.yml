@@ -19,10 +19,10 @@
   repo: wg3-best-practices
   repo_private: true
   summary: Protocols, templates, data quality and processing guidance.
-- slug: wg4-datasets
+- slug: wg4-dataformats
   code: WG4
-  title: Datasets
-  # The repository is still named wg4-dataformats (its description reads "Data Formats").
+  title: Data Formats
+  # Repository: PaleoIMAGING/wg4-dataformats (renamed from wg4-datasets, PR #14).
   repo: wg4-dataformats
   repo_private: true
   summary: Metadata, data models, format examples and practices for documenting, exchanging and reusing datasets.

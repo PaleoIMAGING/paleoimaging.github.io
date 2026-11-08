@@ -39,7 +39,7 @@ permalink: /techniques/
 ## Resources
 
 - [Where We Are]({{ '/where-we-are/' | relative_url }}): which institutions run which techniques.
-- [Working Groups]({{ '/working-groups/' | relative_url }}): standard materials, interlaboratory comparison, best practices and datasets.
+- [Working Groups]({{ '/working-groups/' | relative_url }}): standard materials, interlaboratory comparison, best practices and data formats.
 - [PANGAEA-Paleoimaging-Deep-Search](https://github.com/PaleoIMAGING/PANGAEA-Paleoimaging-Deep-Search): survey of imaging datasets in PANGAEA.
 
 Technique descriptions follow the [PAGES PaleoIMAGING page](https://pastglobalchanges.org/paleoimaging). See [About]({{ '/about/' | relative_url }}) for the scientific goals.
