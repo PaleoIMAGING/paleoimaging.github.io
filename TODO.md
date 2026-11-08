@@ -21,7 +21,7 @@ These are implementation tasks and proposals for review, not additional scientif
 ## 1. Inventory and agreed structure
 
 - [ ] Inspect the current local repositories, READMEs, website files, and links.
-- [ ] Confirm the WG4 rename from `wg4-community` to `wg4-dataformats` (WG4 is called "Data Formats" on the website), including its local directory and Git remote.
+- [ ] Confirm the WG4 repository rename history (`wg4-community` → `wg4-datasets` → `wg4-dataformats` → `wg4-data-formats`; the canonical name is now `wg4-data-formats`, the website page stays `/working-groups/wg4-dataformats/`), including the local directory and Git remote.
 - [ ] Confirm that the WG1, WG2, and WG3 repositories have been created and cloned.
 - [ ] Confirm that `paleoimaging.github.io` has been created and cloned.
 - [ ] Keep `Community-Hub` as the central community forum.
@@ -36,7 +36,7 @@ These are implementation tasks and proposals for review, not additional scientif
 | `wg1-standard-materials` | WG1 workspace |
 | `wg2-interlab-comparison` | WG2 workspace |
 | `wg3-best-practices` | WG3 workspace |
-| `wg4-dataformats` | WG4 workspace |
+| `wg4-data-formats` | WG4 workspace (canonical name; `wg4-community`, `wg4-datasets` and `wg4-dataformats` are former names that redirect) |
 | `Paleoimaging-techniques-map` | Source code and inventory for the map displayed within the website |
 | `git-introduction` | Introductory Git and GitHub learning materials |
 | `git-demo` | Practical tutorial examples and exercises |

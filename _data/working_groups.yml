@@ -22,7 +22,7 @@
 - slug: wg4-dataformats
   code: WG4
   title: Data Formats
-  # Repository: PaleoIMAGING/wg4-dataformats (renamed from wg4-datasets, PR #14).
-  repo: wg4-dataformats
+  # Repository: PaleoIMAGING/wg4-data-formats (the canonical name; the earlier names wg4-community, wg4-datasets and wg4-dataformats only redirect to it).
+  repo: wg4-data-formats
   repo_private: true
   summary: Metadata, data models, format examples and practices for documenting, exchanging and reusing datasets.
