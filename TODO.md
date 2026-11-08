@@ -8,9 +8,12 @@ These are implementation tasks and proposals for review, not additional scientif
 
 - [x] Community reviewed the preview and agreed to publish the new website now and improve incomplete content progressively (release prepared 2026-11-08).
 - [x] Release PR #15 prepared: WG4 standardised as "Data Formats" (page `/working-groups/wg4-dataformats/`), Core Group kept as a clearly marked placeholder, meetings records, feed and submission settings unchanged.
-- [ ] Merge PR #15 into `main` (needs the approving review required by the "Protect main" ruleset) and confirm the GitHub Pages deployment.
-- [ ] Validate https://paleoimaging.github.io/ after deployment (navigation, assets, meetings, feed, submission form).
-- [ ] After validation and explicit approval, delete the `PaleoIMAGING/meetings-staging-site` repository. No permanent staging site is kept; future work uses short-lived `feature/*` or `fix/*` branches, Pull Requests and CI.
+- [x] Merge PR #15 into `main` (approved by the organization administrator; merge commit `8861217`, 2026-11-08) and confirm the GitHub Pages deployment.
+- [x] Validate https://paleoimaging.github.io/ after deployment (all pages 200, no staging banner, feed, submission form configuration; Build check and Validate meetings pass on `main`).
+- [ ] Retire the staging infrastructure: delete the `PaleoIMAGING/meetings-staging-site` repository, the `paleoimaging-meetings-staging` Cloudflare Worker, and the staging GitHub App/Turnstile widget (record: `docs/STAGING-RETIREMENT.md` in `meetings-portal`). No permanent staging site is kept; future work uses short-lived `feature/*` or `fix/*` branches, Pull Requests and CI.
+- [ ] Meetings page is still `noindex` ("remove when the calendar is announced" in `meetings/index.html`); remove it when the calendar is announced.
+- [ ] Optional: add `robots.txt` / sitemap and canonical URLs (none exist yet).
+- [ ] Optional: add Techniques and Meetings archive to the main navigation (reachable today from About and Meetings).
 - [ ] Core Group: add members only once names, affiliations and roles are confirmed (`_data/core_group.yml`).
 - [ ] Review and improve About, Working Group and Techniques copy as the group provides feedback.
 - [ ] Add Resources, Tutorials, Community and map entries to the navigation when their content is ready (sections 5 to 7).
