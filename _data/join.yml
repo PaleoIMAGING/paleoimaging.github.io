@@ -1,0 +1,4 @@
+# Mailing-list subscription details, used by the Join Us page (join/index.html) and _includes/join-address.html.
+# Sending an empty email to `address` asks the Mailman server to subscribe the sender.
+address: paleoimaging.pages-join@lists.unibe.ch
+manage_url: https://listserv.unibe.ch/mailman/listinfo/paleoimaging.pages

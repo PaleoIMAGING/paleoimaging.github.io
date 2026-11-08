@@ -34,24 +34,55 @@ const html = read("meetings/index.html");
 ok(/<meta name="robots" content="noindex/.test(html), "calendar page should be noindex until launch");
 ok(/Skip to content/.test(html), "layout missing");
 
-// Join Us: both entry points (header button, footer link) open a plain mailto: to the Mailman join address,
-// with no subject/body, and the instructions plus a copyable fallback address are visible in the page itself.
+// Join Us: one header button to the internal /join/ page; no subscription action or instructions in the header or
+// footer; /join/ carries the mailto button, the visible copyable fallback address and the Mailman management link.
 {
   const JOIN = "paleoimaging.pages-join@lists.unibe.ch";
-  const OLD = "listserv.unibe.ch/mailman/listinfo/paleoimaging.pages";
-  const pages = [["home", home], ["meetings", html]];
-  for (const [name, src] of pages) {
-    const links = [...src.matchAll(/<a\b[^>]*\bhref="(mailto:[^"]*)"[^>]*>([^<]*)<\/a>/g)];
-    const join = links.filter((l) => /^(Join Us|Join the mailing list)$/.test(l[2].trim()));
-    ok(join.length === 2, `${name}: expected the header "Join Us" and footer "Join the mailing list" links, found ${join.length}`);
-    for (const l of join) ok(l[1] === `mailto:${JOIN}`, `${name}: "${l[2]}" must be exactly mailto:${JOIN} (no subject or body), got ${l[1]}`);
-    ok(!/<a\b[^>]*class="btn"[^>]*listserv\.unibe\.ch/.test(src), `${name}: header button must not point to the University of Bern page`);
-    const joinHrefs = [...src.matchAll(/<a\b[^>]*\bhref="([^"]*)"[^>]*>(Join Us|Join the mailing list)<\/a>/g)];
-    ok(joinHrefs.every((l) => !l[1].includes(OLD)), `${name}: Join links must not use the old Mailman subscription page`);
-    ok((src.match(new RegExp(`<code class="join-address">${JOIN.replace(/\./g, "\\.")}</code>`, "g")) || []).length >= 1, `${name}: the address must be shown as copyable text in the footer`);
-    ok(/no subject or message/.test(src) && /spam folder/.test(src) && /does not open, send an empty email/.test(src), `${name}: instructions and fallback must be visible on the page`);
-    ok(/class="join-note"/.test(src), `${name}: footer instructions missing`);
-    ok(!/join-strip/.test(src) && !/<header[\s\S]*?no subject or message[\s\S]*?<\/header>/.test(src), `${name}: header must stay compact, without instruction text`);
+  const MANAGE = "https://listserv.unibe.ch/mailman/listinfo/paleoimaging.pages";
+  const header = (src) => (src.match(/<header class="site-header"[\s\S]*?<\/header>/) || [""])[0];
+  const footer = (src) => (src.match(/<footer class="site-footer"[\s\S]*?<\/footer>/) || [""])[0];
+  for (const [name, src] of [["home", home], ["meetings", html]]) {
+    const hd = header(src), ft = footer(src);
+    const btns = [...hd.matchAll(/<a\b[^>]*class="btn"[^>]*>/g)];
+    ok(btns.length === 1 && /href="\/join\/"/.test(btns[0][0]) && /class="btn"[^>]*>\s*Join Us<\/a>/.test(hd), `${name}: header must have exactly one Join Us button pointing to /join/`);
+    ok(!/mailto:|listserv\.unibe\.ch|spam folder|no subject/.test(hd), `${name}: header must carry no subscription link or instructions`);
+    ok(/PAGES/.test(ft) && /github\.com\/PaleoIMAGING/.test(ft), `${name}: footer must keep its institutional and GitHub links`);
+    ok(!/mailto:|listserv\.unibe\.ch|mailing list|Join Us|join-note/i.test(ft), `${name}: footer must have no subscription action or instructions`);
+    for (const p of ["/about/", "/core-group/", "/working-groups/", "/meetings/", "/where-we-are/", "/news/", "/search/"]) ok(hd.includes(`href="${p}"`), `${name}: navigation link ${p} missing`);
+  }
+  const jp = read("join/index.html");
+  ok(/<h1>Join the PaleoIMAGING Community<\/h1>/.test(jp) && /Skip to content/.test(jp), "/join/ must be built with the site layout");
+  ok(!/<meta name="robots"/.test(jp), "/join/ must stay indexable");
+  const mailtos = [...jp.matchAll(/href="(mailto:[^"]*)"/g)].map((m) => m[1]);
+  ok(mailtos.length === 1 && mailtos[0] === `mailto:${JOIN}`, `/join/ must have exactly one mailto, exactly mailto:${JOIN} (no subject or body); got ${mailtos}`);
+  ok(/<a class="btn join-btn" href="mailto:[^"]*">Subscribe by email<\/a>/.test(jp), "/join/ needs the Subscribe by email button");
+  ok(/If nothing happens when you click/.test(jp) && /send a blank message to/.test(jp), "/join/ fallback section missing");
+  ok(new RegExp(`<code class="join-address" id="join-address">${JOIN.replace(/\./g, "\.")}</code>`).test(jp), "/join/ must show the address as selectable text");
+  ok(/check your spam folder/.test(jp) && /may receive an email asking you to confirm/.test(jp), "/join/ confirmation wording missing");
+  ok(!/always|immediately subscribed|automatically subscribed/i.test(jp), "/join/ must not overclaim about confirmation or instant subscription");
+  ok(jp.includes(`<a href="${MANAGE}">Manage or unsubscribe from the mailing list</a>`), "/join/ must link to the Mailman management page");
+  ok(!/<a class="btn[^"]*"[^>]*listserv/.test(jp), "the University of Bern page must not be a primary action");
+  // Copy button: works without JavaScript (hidden until the script reveals it), keyboard-operable, announces the result.
+  ok(/<button type="button" class="btn btn--ghost" id="copy-address" data-target="join-address" hidden>Copy address<\/button>/.test(jp), "copy button must be a real button, hidden until JavaScript runs");
+  ok(/id="copy-status"[^>]*role="status"[^>]*aria-live="polite"/.test(jp), "copy feedback must be announced (role=status, aria-live)");
+  ok(/src="\/assets\/js\/join\.js"/.test(jp), "/join/ must load join.js");
+  const js = readFileSync(join(dir, "assets/js/join.js"), "utf8");
+  ok(/navigator\.clipboard/.test(js) && /execCommand\("copy"\)/.test(js) && /btn\.hidden = false/.test(js) && /Could not copy automatically/.test(js), "join.js must copy with a fallback and report failure");
+  // Behaviour in jsdom: button appears, copy reports success; a failing clipboard falls back to a visible message.
+  for (const mode of ["ok", "fail"]) {
+    const dom = new JSDOM(jp.replace(/<script src="[^"]*"><\/script>/g, ""), { runScripts: "outside-only", url: "https://example.org/join/" });
+    const w = dom.window;
+    if (mode === "ok") Object.defineProperty(w.navigator, "clipboard", { value: { writeText: (t) => { w.__copied = t; return Promise.resolve(); } } });
+    Object.defineProperty(w, "isSecureContext", { value: mode === "ok" });
+    w.document.execCommand = () => false;
+    w.eval(js);
+    const b = w.document.getElementById("copy-address");
+    ok(!b.hidden, "copy button must appear when JavaScript runs");
+    b.click();
+    await new Promise((r) => setTimeout(r, 20));
+    const msg = w.document.getElementById("copy-status").textContent;
+    if (mode === "ok") ok(w.__copied === JOIN && /copied/.test(msg), "copy must put the exact address on the clipboard and say so");
+    else ok(/Could not copy automatically/.test(msg), "failed copy must tell the user how to copy manually");
   }
 }
 

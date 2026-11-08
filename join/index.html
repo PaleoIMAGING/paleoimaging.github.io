@@ -1,0 +1,34 @@
+---
+layout: default
+title: Join the PaleoIMAGING Community
+description: How to join the PaleoIMAGING mailing list for announcements about meetings, workshops and collaborative activities.
+permalink: /join/
+---
+<h1>Join the PaleoIMAGING Community</h1>
+<p class="lead">Stay connected with PaleoIMAGING through our mailing list. Receive announcements about meetings, workshops, collaborative activities and opportunities to participate.</p>
+
+<section class="join-section" aria-labelledby="join-what">
+  <h2 id="join-what">About the mailing list</h2>
+  <p>The mailing list is the community&rsquo;s announcement and communication channel. It is the main way we share meeting invitations, workshop news and calls for participation with researchers and technicians who use imaging and analytical scanning techniques on paleoenvironmental archives.</p>
+</section>
+
+<section class="join-section" aria-labelledby="join-how">
+  <h2 id="join-how">How to subscribe</h2>
+  <p>Send an empty email from the address you wish to subscribe. No subject or message is required.</p>
+  <p><a class="btn join-btn" href="mailto:{{ site.data.join.address }}">Subscribe by email</a></p>
+  <p>You may receive an email asking you to confirm your subscription. If you do not see it, please check your spam folder.</p>
+</section>
+
+<section class="join-section join-fallback" aria-labelledby="join-fallback">
+  <h2 id="join-fallback">If nothing happens when you click</h2>
+  <p>Copy the address below, open Gmail, Outlook or your preferred email service, and send a blank message to:</p>
+  <p class="join-copy">
+    {% include join-address.html %}
+    <button type="button" class="btn btn--ghost" id="copy-address" data-target="join-address" hidden>Copy address</button>
+    <span id="copy-status" class="join-status" role="status" aria-live="polite"></span>
+  </p>
+</section>
+
+<p class="join-manage"><a href="{{ site.data.join.manage_url }}">Manage or unsubscribe from the mailing list</a></p>
+
+<script src="{{ '/assets/js/join.js' | relative_url }}"></script>

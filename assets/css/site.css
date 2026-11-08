@@ -239,6 +239,16 @@ h2 { color: var(--accent); font-size: 1.25rem; }
 .technique-figure .credit { display: block; color: var(--ink-faint); }
 
 /* ---- mailing-list instructions (header strip and footer note) ---- */
-.join-address { background: #fff; border: 1px solid var(--line); padding: .05rem .35rem; border-radius: .25rem; overflow-wrap: anywhere; user-select: all; -webkit-user-select: all; font-size: .9em; }
-.site-footer .join-note { margin-top: .6rem; max-width: 52rem; color: var(--ink-soft); }
-.site-footer .join-note a, .site-footer .join-note a:first-of-type { text-decoration: underline; margin-left: 0; }
+
+/* ---- /join/ page ---- */
+.join-section { max-width: 42rem; margin: 1.5rem 0; }
+.join-section h2 { margin: 0 0 .5rem; }
+.join-btn { font-size: 1rem; padding: .65rem 1.25rem; font-weight: 500; }
+.join-fallback { background: var(--accent-soft); border: 1px solid var(--line); border-radius: .5rem; padding: 1rem 1.25rem; }
+.join-copy { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin: 0; }
+.join-address { background: #fff; border: 1px solid var(--line); padding: .35rem .6rem; border-radius: .25rem; overflow-wrap: anywhere; user-select: all; -webkit-user-select: all; font-size: 1rem; }
+.join-status { font-size: .875rem; color: var(--ink-soft); }
+.join-manage { font-size: .875rem; color: var(--ink-soft); margin-top: 2rem; }
+@media (max-width: 36rem) {
+  .join-btn { display: block; text-align: center; }
+}
