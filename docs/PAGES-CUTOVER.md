@@ -53,3 +53,7 @@ Open a PR (required checks and one review apply; there is no bypass) and merge i
 ## After the cutover
 
 Do not remove `meetings/feed.ics` from `main` until the YAML-only Worker is deployed and verified; removal is a separate approved change that also adds the ignore rule and a CI guard.
+
+## Status
+
+Cutover performed on 2026-11-19 (Pages source: GitHub Actions; `PAGES_PUBLISH=true`). The `Pages` run 44568503104 built and deployed `f69ae94`; the live feed matched the committed feed apart from DTSTAMP, with all five records, the monthly series and the weekly series with its three exceptions. The legacy rollback remains valid while `meetings/feed.ics` stays in `main`.
