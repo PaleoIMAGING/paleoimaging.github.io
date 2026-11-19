@@ -1,0 +1,17 @@
+schema_version: 2
+id: "grf17-results-meeting-20261210-139fc738"
+title: "GRF17 results meeting"
+description: "This meeting is part of the SC and WG meeting"
+wgs:
+  - "general"
+type: "wg-meeting"
+format: "online"
+start: "2026-12-10T12:30"
+end: "2026-12-10T14:00"
+timezone: "Europe/Rome"
+platform: "Zoom"
+access: "public"
+url: "https://unibe-ch.zoom.us/j/65951713501"
+organizers:
+  - name: "SC+WGs"
+    affiliation: "PaleoIMAGING"
