@@ -8,7 +8,6 @@
     "validate": "node validate-meetings.mjs",
     "test": "node --test \"test/*.test.mjs\"",
     "build:ics": "node build-ics.mjs",
-    "check:ics": "node build-ics.mjs --check",
     "check:calendar": "node check-calendar.mjs",
     "shared:write": "node shared-manifest.mjs --write",
     "shared:check": "node shared-manifest.mjs --check",

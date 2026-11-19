@@ -5,8 +5,7 @@ name: Validate meetings
 #
 # meetings/feed.ics is a generated deployment artifact. A pull request needs to carry only its
 # YAML record: the check generates a fresh calendar from the proposed records (never from the
-# committed feed). During the transition a pull request that DOES change feed.ics (older Worker
-# versions, or a maintainer) must still keep it consistent with the records.
+# committed feed) and a guard refuses any pull request that tracks the feed in Git.
 on:
   pull_request:
   workflow_dispatch:
@@ -19,8 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # to see which files the pull request changes
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -37,17 +34,14 @@ jobs:
       - name: Generate and verify a fresh calendar from the proposed records
         run: npm run check:calendar
         working-directory: tools
-      - name: Committed feed is consistent (only when this pull request changes it)
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      # meetings/feed.ics is generated at publication. Tracking it again would bring back merge
+      # conflicts between concurrent submissions, so it is refused outright.
+      - name: Generated-artifact guard (meetings/feed.ics must not be tracked)
         run: |
-          if [ -n "$BASE_SHA" ] && git diff --name-only "$BASE_SHA" HEAD | grep -qx 'meetings/feed.ics'; then
-            echo "This pull request changes meetings/feed.ics; checking it against the records."
-            npm run check:ics
-          else
-            echo "meetings/feed.ics is not part of this pull request; the production feed is generated at publication."
+          if [ -n "$(git ls-files meetings/feed.ics)" ]; then
+            echo "::error file=meetings/feed.ics::meetings/feed.ics is a generated deployment artifact and must not be committed. Remove it from Git (git rm --cached meetings/feed.ics); the Pages workflow generates it."
+            exit 1
           fi
-        working-directory: tools
       - name: Shared-file manifest is up to date
         run: npm run shared:check
         working-directory: tools

@@ -13,7 +13,7 @@ The site is published either by the legacy branch builder (`build_type: legacy`,
 
 ## Cutover (maintainer approval required)
 
-Preconditions: latest `Pages` run on `main` is green with `deploy` skipped and `identical: N, different: 0`; `check:ics` passes on `main`; no pending Pages build.
+Preconditions: latest `Pages` run on `main` is green with `deploy` skipped and `identical: N, different: 0`; `npm run check:calendar` passes on `main`; no pending Pages build.
 
 ```bash
 R=PaleoIMAGING/paleoimaging.github.io
@@ -31,6 +31,10 @@ Verify: the run's `build` and `deploy` jobs succeed; `gh api repos/$R/pages -q .
 
 ## Rollback to legacy publication
 
+`meetings/feed.ics` is no longer tracked (Phase 6). The legacy branch builder only serves files that are in `main`, so **switching back to legacy publication first requires restoring the feed in `main`**:
+
+The way to do it is to **revert the Phase 6 pull request** (it restores the file, the ignore rule and the guard together), regenerate with `npm run build:ics` if records changed since, and merge that through the normal PR process (required checks and one review; no bypass). Then:
+
 ```bash
 R=PaleoIMAGING/paleoimaging.github.io
 gh variable set PAGES_PUBLISH --repo $R --body false
@@ -38,22 +42,10 @@ gh api -X PUT repos/$R/pages -f build_type=legacy -f 'source[branch]=main' -f 's
 gh api -X POST repos/$R/pages/builds        # build main now
 ```
 
-The legacy builder serves the **committed** `meetings/feed.ics`, so it must be current. During the transition it can be stale (a YAML-only submission was merged after the cutover). Before or right after switching back:
+Never roll the Worker back to a version that reads `feed.ics` (before `d40cee55`) unless the file is present in `main`; the old version fails closed with a 503 when it is missing.
 
-```bash
-git switch -c fix/regenerate-feed origin/main
-cd tools && npm ci && npm run check:ics      # fails when the committed feed is stale
-npm run build:ics                            # regenerates meetings/feed.ics (DTSTAMP from Git history)
-npm run check:ics && npm run check:calendar
-git add ../meetings/feed.ics && git commit -m "Regenerate meetings/feed.ics" && git push -u origin HEAD
-```
-
-Open a PR (required checks and one review apply; there is no bypass) and merge it, then confirm `/meetings/feed.ics` contains every record. Never roll the Worker back to a version that reads `feed.ics` unless the file is present in `main`.
-
-## After the cutover
-
-Do not remove `meetings/feed.ics` from `main` until the YAML-only Worker is deployed and verified; removal is a separate approved change that also adds the ignore rule and a CI guard.
+Rolling back only the **Pages workflow** (for example a bad deploy) needs none of this: re-run an earlier successful `Pages` run, or dispatch `pages.yml` with `deploy=true` on a known-good revision.
 
 ## Status
 
-Cutover performed on 2026-11-19 (Pages source: GitHub Actions; `PAGES_PUBLISH=true`). The `Pages` run 44568503104 built and deployed `f69ae94`; the live feed matched the committed feed apart from DTSTAMP, with all five records, the monthly series and the weekly series with its three exceptions. The legacy rollback remains valid while `meetings/feed.ics` stays in `main`.
+Cutover performed on 2026-11-19 (Pages source: GitHub Actions; `PAGES_PUBLISH=true`). The `Pages` run 44568503104 built and deployed `f69ae94`; the live feed matched the committed feed apart from DTSTAMP, with all five records, the monthly series and the weekly series with its three exceptions. Legacy rollback was valid while `meetings/feed.ics` stayed in `main`; after Phase 6 see the rollback section above.
