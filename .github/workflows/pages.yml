@@ -1,14 +1,19 @@
 name: Pages
 
-# Builds the site (Jekyll + the generated calendar feed) and, when explicitly requested on
-# main, publishes it with the official GitHub Pages actions.
+# Builds the site (Jekyll + the generated calendar feed) and publishes it with the official
+# GitHub Pages actions.
 #
-# * pull_request (workflow changes only) and workflow_dispatch run in BUILD-ONLY mode:
-#   they build, validate and compare against production, and can never deploy.
-# * The deploy job runs only for workflow_dispatch with deploy=true on main, and requires the
-#   repository's Pages source to be "GitHub Actions".
+# * pull_request (workflow changes only) and workflow_dispatch without deploy run in
+#   BUILD-ONLY mode: they build, validate and compare against production, and never deploy.
+# * Every push to main builds the site. It is PUBLISHED only when the repository variable
+#   PAGES_PUBLISH is "true" (set during the production cutover, together with switching the
+#   Pages source to "GitHub Actions"). Until then a push to main is build-only, so this
+#   workflow is inert with respect to production while Pages still uses the legacy builder.
+# * workflow_dispatch with deploy=true on main publishes manually (same Pages-source requirement).
 # * Only the deploy job holds pages: write and id-token: write.
 on:
+  push:
+    branches: [main]
   pull_request:
     paths: [".github/workflows/pages.yml", "tools/compare-site.mjs"]
   workflow_dispatch:
@@ -78,7 +83,11 @@ jobs:
 
   deploy:
     needs: build
-    if: github.event_name == 'workflow_dispatch' && inputs.deploy && github.ref == 'refs/heads/main'
+    if: >-
+      github.ref == 'refs/heads/main' && (
+        (github.event_name == 'push' && vars.PAGES_PUBLISH == 'true') ||
+        (github.event_name == 'workflow_dispatch' && inputs.deploy)
+      )
     runs-on: ubuntu-latest
     permissions:
       pages: write
