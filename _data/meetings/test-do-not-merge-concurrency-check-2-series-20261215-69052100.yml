@@ -1,0 +1,20 @@
+schema_version: 2
+id: "test-do-not-merge-concurrency-check-2-series-20261215-69052100"
+title: "[TEST – DO NOT MERGE] Concurrency check 2 (series)"
+description: "testing"
+wgs:
+  - "general"
+type: "other"
+format: "online"
+start: "2026-12-15T14:00"
+end: "2026-12-15T15:00"
+timezone: "Europe/Rome"
+recurrence:
+  freq: "monthly"
+  interval: 5
+  count: 5
+platform: "zoom"
+access: "public"
+url: "https://teste.com"
+organizers:
+  - name: "Andre Belem"
