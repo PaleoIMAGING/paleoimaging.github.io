@@ -6,3 +6,6 @@ node_modules/
 vendor/
 .DS_Store
 Thumbs.db
+
+# Generated deployment artifact (built by tools/build-ics.mjs in the Pages workflow)
+/meetings/feed.ics
