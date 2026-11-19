@@ -686,6 +686,21 @@ test("PRIVACY: a join link or email in the note, description or title blocks the
   }
 });
 
+test("PRIVACY: a Microsoft Safe Links address is refused with a request for the original link, and is not echoed", () => {
+  const SAFE = "https://eur03.safelinks.protection.outlook.com/?url=https%3A%2F%2Fmaine.zoom.us%2Fj%2F1&data=05%7Cprivate%40example.org";
+  const { w, d } = load();
+  fillValid(w, d);
+  type(w, d, "url", SAFE);
+  submit(w, d);
+  assert.ok(q(d, "#review-panel").hidden);
+  assert.match(q(d, "#error-summary").textContent, /Safe Links.*original meeting link/i);
+  assert.ok(!q(d, "#error-summary").textContent.includes("private%40"));
+  // a legitimate link still goes through
+  type(w, d, "url", "https://unibe-ch.zoom.us/j/65951713501");
+  submit(w, d);
+  assert.ok(!q(d, "#review-panel").hidden);
+});
+
 test("PRIVACY: public join links are shown with a clear warning that they are public", () => {
   const { w, d } = load();
   choose(w, d, "format", "online");

@@ -219,6 +219,7 @@
     if (message.indexOf("must be a valid IANA") === 0) return "Choose a time zone from the list, or type a valid name such as Europe/Warsaw.";
     if (message === "must be after start") return "The end must be after the start.";
     if (message.indexOf("meeting longer than") === 0) return "Meetings can last at most 14 days.";
+    if (message.indexOf("must be the original meeting link") === 0) return "This is a Microsoft Safe Links address, which contains private mailbox data and stops working. Please open the invitation and paste the original meeting link (for example the https://…zoom.us/j/… address) instead.";
     if (message === "must use https") return "The address must start with https://";
     if (message === "must be a valid URL") return "Enter a full web address such as https://example.org/page";
     if (message.indexOf("must not contain credentials") === 0) return "Remove the user name and password from the address.";
