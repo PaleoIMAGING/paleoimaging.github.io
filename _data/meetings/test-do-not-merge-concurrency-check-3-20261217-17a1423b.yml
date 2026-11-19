@@ -1,0 +1,15 @@
+schema_version: 2
+id: "test-do-not-merge-concurrency-check-3-20261217-17a1423b"
+title: "[TEST – DO NOT MERGE] Concurrency check 3"
+wgs:
+  - "general"
+type: "other"
+format: "online"
+start: "2026-12-17T10:00"
+end: "2026-12-17T11:00"
+timezone: "Europe/Rome"
+platform: "zoom"
+access: "public"
+url: "https://zoom.com"
+organizers:
+  - name: "Andre Belem"
