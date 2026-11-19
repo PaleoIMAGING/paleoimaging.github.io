@@ -1,0 +1,17 @@
+schema_version: 2
+id: "ci-compat-check-20270105-aaaaaaaa"
+title: "CI compatibility test (do not merge)"
+description: "This meeting is part of the SC and WG meeting"
+wgs:
+  - "general"
+type: "wg-meeting"
+format: "online"
+start: "2027-01-05T12:30"
+end: "2027-01-05T14:00"
+timezone: "Europe/Rome"
+platform: "Zoom"
+access: "public"
+url: "https://unibe-ch.zoom.us/j/65951713501"
+organizers:
+  - name: "SC+WGs"
+    affiliation: "PaleoIMAGING"
