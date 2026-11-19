@@ -1,0 +1,26 @@
+schema_version: 2
+id: "lunch-method-meetings-20261202-4ea1fb26"
+title: "Lunch method meetings"
+description: "If you are interested how other labs are acquiring or processing their data, join our short informal lunch meetingds"
+wgs:
+  - "general"
+type: "webinar"
+format: "online"
+start: "2026-12-02T13:00"
+end: "2026-12-02T14:00"
+timezone: "Europe/Rome"
+recurrence:
+  freq: "weekly"
+  until: "2027-03-03"
+  byday:
+    - "WE"
+  exceptions:
+    - "2026-12-23"
+    - "2026-12-30"
+    - "2027-01-06"
+platform: "Zoom"
+access: "public"
+url: "https://unibe-ch.zoom.us/j/65447639178"
+organizers:
+  - name: "Petra Zahajská"
+    affiliation: "Uni Bern"
