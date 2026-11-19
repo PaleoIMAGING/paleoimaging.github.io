@@ -61,4 +61,24 @@ STATUS:CONFIRMED
 TRANSP:OPAQUE
 URL:https://unibe-ch.zoom.us/j/65951713501
 END:VEVENT
+BEGIN:VEVENT
+UID:lunch-method-meetings-20261202-4ea1fb26@paleoimaging.github.io
+DTSTAMP:20261009T121850Z
+SEQUENCE:0
+DTSTART;TZID=Europe/Rome:20261202T130000
+DTEND;TZID=Europe/Rome:20261202T140000
+RRULE:FREQ=WEEKLY;INTERVAL=1;BYDAY=WE;WKST=MO;UNTIL=20270303T120000Z
+EXDATE;TZID=Europe/Rome:20261223T130000
+EXDATE;TZID=Europe/Rome:20261230T130000
+EXDATE;TZID=Europe/Rome:20270106T130000
+SUMMARY:Lunch method meetings
+DESCRIPTION:If you are interested how other labs are acquiring or processin
+ g their data\, join our short informal lunch meetingds\n\nhttps://paleoima
+ ging.github.io/meetings/#lunch-method-meetings-20261202-4ea1fb26
+LOCATION:Online (Zoom)
+CATEGORIES:GENERAL
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+URL:https://unibe-ch.zoom.us/j/65447639178
+END:VEVENT
 END:VCALENDAR
