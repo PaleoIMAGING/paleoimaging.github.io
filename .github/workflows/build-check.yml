@@ -81,8 +81,13 @@ jobs:
       - name: Check the submission form (conditional fields, validation, accessibility, privacy, sending and error handling)
         run: node tools/form-test.mjs "$RUNNER_TEMP/site-empty"
 
-      - name: Build the real repository data (published records and committed feed)
+      # The feed is a generated artifact: build it from the proposed records exactly as the Pages
+      # workflow does, instead of trusting a committed copy that a YAML-only pull request leaves stale.
+      - name: Generate the calendar feed from the real repository data
+        run: node tools/build-ics.mjs
+
+      - name: Build the real repository data (published records and generated feed)
         run: bundle exec jekyll build --destination "$RUNNER_TEMP/site-published"
 
-      - name: Check that every published record is in the page data and in the committed feed
+      - name: Check that every published record is in the page data and in the generated feed
         run: node tools/site-test.mjs "$RUNNER_TEMP/site-published" --published

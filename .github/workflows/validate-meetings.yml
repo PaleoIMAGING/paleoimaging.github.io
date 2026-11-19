@@ -2,6 +2,11 @@ name: Validate meetings
 
 # Runs on every pull request (no path filter) so that it can be a required status check
 # in the "Protect main" ruleset: a required check that never starts would block the merge.
+#
+# meetings/feed.ics is a generated deployment artifact. A pull request needs to carry only its
+# YAML record: the check generates a fresh calendar from the proposed records (never from the
+# committed feed). During the transition a pull request that DOES change feed.ics (older Worker
+# versions, or a maintainer) must still keep it consistent with the records.
 on:
   pull_request:
   workflow_dispatch:
@@ -14,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # to see which files the pull request changes
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -27,8 +34,19 @@ jobs:
       - name: Validate published records
         run: npm run validate
         working-directory: tools
-      - name: Committed calendar feed is up to date
-        run: npm run check:ics
+      - name: Generate and verify a fresh calendar from the proposed records
+        run: npm run check:calendar
+        working-directory: tools
+      - name: Committed feed is consistent (only when this pull request changes it)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$BASE_SHA" ] && git diff --name-only "$BASE_SHA" HEAD | grep -qx 'meetings/feed.ics'; then
+            echo "This pull request changes meetings/feed.ics; checking it against the records."
+            npm run check:ics
+          else
+            echo "meetings/feed.ics is not part of this pull request; the production feed is generated at publication."
+          fi
         working-directory: tools
       - name: Shared-file manifest is up to date
         run: npm run shared:check
