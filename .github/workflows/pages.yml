@@ -1,0 +1,101 @@
+name: Pages
+
+# Builds the site (Jekyll + the generated calendar feed) and, when explicitly requested on
+# main, publishes it with the official GitHub Pages actions.
+#
+# * pull_request (workflow changes only) and workflow_dispatch run in BUILD-ONLY mode:
+#   they build, validate and compare against production, and can never deploy.
+# * The deploy job runs only for workflow_dispatch with deploy=true on main, and requires the
+#   repository's Pages source to be "GitHub Actions".
+# * Only the deploy job holds pages: write and id-token: write.
+on:
+  pull_request:
+    paths: [".github/workflows/pages.yml", "tools/compare-site.mjs"]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Publish to production (main only; Pages source must be GitHub Actions)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# One publication at a time; never cancel a running deployment, but only the newest
+# queued run survives (older pending runs are replaced).
+concurrency:
+  group: pages-${{ github.event_name == 'pull_request' && github.ref || 'production' }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      JEKYLL_ENV: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # DTSTAMP is derived from Git history (tools/stamp.mjs)
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tools/package-lock.json
+
+      - name: Install tool dependencies
+        run: npm ci
+        working-directory: tools
+
+      - name: Validate records and generate the calendar feed
+        run: |
+          npm run validate
+          npm run build:ics
+          npm run shared:check
+        working-directory: tools
+
+      - name: Build the site
+        run: bundle exec jekyll build --destination _site
+
+      - name: Validate the deployment artifact
+        run: |
+          test -s _site/meetings/feed.ics
+          test -s _site/meetings/index.html
+          test -s _site/meetings/submit/index.html
+          node tools/site-test.mjs _site --published
+
+      - name: Compare with the current production site (informational)
+        run: node tools/compare-site.mjs _site https://paleoimaging.github.io
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Do not publish a revision that is no longer the tip of main.
+      - name: Refuse stale revisions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tip=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          if [ "$tip" != "$GITHUB_SHA" ]; then
+            echo "::error::$GITHUB_SHA is not the tip of main ($tip); not deploying a stale revision."
+            exit 1
+          fi
+      - id: deployment
+        uses: actions/deploy-pages@v4
