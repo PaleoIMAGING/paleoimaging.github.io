@@ -22,6 +22,9 @@ jobs:
       JEKYLL_ENV: production
     steps:
       - uses: actions/checkout@v4
+        with:
+          # build-ics derives DTSTAMP from Git history and refuses shallow clones.
+          fetch-depth: 0
 
       - uses: ruby/setup-ruby@v1
         with:

@@ -2,11 +2,13 @@
 //   node build-ics.mjs --out ../meetings/feed.ics   write the feed
 //   node build-ics.mjs --check                      fail if the committed feed is stale
 //   --dir <records dir>   use another records directory
+//   --stamp <epoch-s>     DTSTAMP override (else SOURCE_DATE_EPOCH, else Git history; see stamp.mjs)
 // The feed is built by assets/js/meetings-ics.js: CRLF, folded lines and
 // embedded VTIMEZONE blocks, which Jekyll's Liquid cannot produce.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { ics, loadConfig, recordsDir, siteRoot, validateDir } from "./lib.mjs";
+import { dataIsDirty, resolveStamp } from "./stamp.mjs";
 
 const arg = (name) => { const i = process.argv.indexOf(name); return i > -1 ? process.argv[i + 1] : null; };
 const feedPath = resolve(arg("--out") || join(siteRoot, "meetings", "feed.ics"));
@@ -20,12 +22,26 @@ if (invalid.length) {
 }
 
 const origin = config.ui.site_url;
-const text = ics.buildCalendar(results.map((r) => r.record), config, { stamp: Date.now(), origin });
+const checking = process.argv.includes("--check");
+// --check ignores DTSTAMP (see below), so it needs no history; a build must have a real stamp.
+let stamp = 0;
+if (!checking) {
+  try {
+    const s = resolveStamp({ root: siteRoot, args: process.argv.slice(2) });
+    stamp = s.ms;
+    if (s.source === "git" && dataIsDirty(siteRoot)) console.warn("warning: meeting data has uncommitted changes; DTSTAMP reflects the last commit.");
+  } catch (e) {
+    console.error(e.message);
+    process.exit(1);
+  }
+}
+const text = ics.buildCalendar(results.map((r) => r.record), config, { stamp, origin });
 
-// DTSTAMP changes on every run, so staleness ignores it.
+// Transitional: the committed feed may have been produced by the Worker with another stamp,
+// so staleness still ignores DTSTAMP.
 const normalise = (s) => s.replace(/^DTSTAMP:.*$/gm, "DTSTAMP:-");
 
-if (process.argv.includes("--check")) {
+if (checking) {
   let current = "";
   try { current = readFileSync(feedPath, "utf8"); } catch { /* missing counts as stale */ }
   if (normalise(current) !== normalise(text)) {

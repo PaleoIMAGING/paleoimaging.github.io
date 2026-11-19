@@ -126,6 +126,31 @@ Because GitHub Pages' standard build cannot run scripts, the generated feed is
 cd tools && npm run build:ics
 ```
 
+### Deterministic `DTSTAMP`
+
+The generator is deterministic: identical records at the same source revision
+give byte-identical output. Every `VEVENT` carries one calendar-wide `DTSTAMP`,
+resolved in this order:
+
+1. `--stamp <epoch-seconds>`;
+2. `SOURCE_DATE_EPOCH` (epoch seconds);
+3. the committer time of the latest commit touching `_data/meetings/` or
+   `_data/meetings_config.yml` (`tools/stamp.mjs`).
+
+There is no wall-clock fallback. A shallow clone, a non-Git directory or a
+history without such a commit is an error; CI therefore checks out with
+`fetch-depth: 0`. Uncommitted record changes produce a warning, because the
+stamp then reflects the last commit.
+
+Limitations: the stamp is calendar-wide, so when any record changes, every
+event's `DTSTAMP` moves together. Event identity and versioning rely on `UID`
+and `SEQUENCE` (unchanged), not on `DTSTAMP`, and RFC 5545 only requires
+`DTSTAMP` to be the creation time of the iCalendar object, so this is
+compliant. A per-event stamp would need one Git lookup per file and a change to
+the shared `meetings-ics.js`; it is not required by the existing semantics.
+During the transition the committed feed may carry a different stamp (it can
+come from the Worker), so `check:ics` still ignores `DTSTAMP`.
+
 CI fails a pull request whose feed is stale (`npm run check:ics`). To remove
 this manual step, the site can later be deployed from a GitHub Actions
 workflow that generates the feed during the build (this needs the repository's
