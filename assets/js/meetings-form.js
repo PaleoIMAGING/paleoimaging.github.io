@@ -270,7 +270,7 @@
   }
 
   function renderErrors() {
-    var errors = validator.validate(model.buildRecord(values, cfg), cfg);
+    var errors = validator.validate(model.buildRecord(values, cfg), cfg, { submission: true });
     lastGroups = model.groupErrors(errors, values);
     qsa(".error[data-error-for]").forEach(function (e) {
       var key = e.getAttribute("data-error-for");
@@ -457,7 +457,7 @@
   function send() {
     if (sending || !token || !live) return;
     var rec = model.buildRecord(values, cfg);
-    if (validator.validate(rec, cfg).length) {   // the form is always re-checked before sending
+    if (validator.validate(rec, cfg, { submission: true }).length) {   // the form is always re-checked before sending
       attempted = true; update(); renderSummary(true); hideReview();
       return;
     }

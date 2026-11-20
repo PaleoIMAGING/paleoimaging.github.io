@@ -270,3 +270,11 @@ The site navigation (`_includes/header.html`) links to the calendar.
 The submission form, the Cloudflare Worker that opens review pull requests,
 Turnstile, rate limiting, GitHub App authentication and branch protection are
 specified separately. Until then `ui.submission.enabled` stays `false`.
+
+## Safe Links meeting URLs (new submissions only)
+
+Microsoft Safe Links rewrites links in a mailbox (`*.safelinks.protection.outlook.com`, and `*.safelinks.protection.office365.us`) and embeds the recipient's address and tenant data in the rewritten URL. Such an address must not be published.
+
+- `validate(record, config, { submission: true })` rejects a `url`, `registration_url` or `links[].url` whose **parsed hostname** is one of those hosts (a look-alike string in the path or query does not match). The message asks for the original meeting link. The rejected URL is not echoed, logged, fetched or rewritten.
+- The submission form passes `submission: true`, and the Worker will do the same after the shared files are synced (coordinated release, see the portal TODO).
+- Without the option (website CI, the Worker's reading of published records) nothing changes, so an already-published record is never invalidated. Correcting an existing record is a separate content change made by a maintainer.

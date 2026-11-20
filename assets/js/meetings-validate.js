@@ -44,8 +44,23 @@
     return null;
   }
 
+  // Microsoft Safe Links rewrites a link in a mailbox and embeds the recipient's address and
+  // tenant data in it. Detected by the PARSED hostname only (never by substring), so
+  // "https://zoom.us/j/1?x=safelinks.protection.outlook.com" is not affected. Nothing is fetched.
+  var WRAPPER_HOST_RE = /(^|\.)safelinks\.protection\.(outlook\.com|office365\.us)$/;
+  var WRAPPED_URL_MESSAGE = "must be the original meeting link, not a Microsoft Safe Links address (it contains private mailbox data and stops working). Open the invitation and copy the real Zoom, Teams or Meet link";
+  function isWrappedUrl(value) {
+    var u;
+    try { u = new URL(value); } catch (e) { return false; }
+    return WRAPPER_HOST_RE.test(u.hostname.toLowerCase());
+  }
+
+  // options.filenameId: the file name stem the record id must match.
+  // options.submission: true for NEW proposals (the form and the Worker). It adds the checks that
+  // must not be applied to already-published records, so adding one never invalidates the data.
   function validate(rec, config, options) {
     var filenameId = options && options.filenameId;
+    var submission = !!(options && options.submission);
     var errors = [];
     function err(field, msg) { errors.push(field + ": " + msg); }
     if (!isObj(rec)) return ["record must be a mapping"];
@@ -128,7 +143,11 @@
       if (acc.id !== "registration" && present(rec.registration_url)) err("registration_url", 'only allowed when access is "registration"');
     }
     ["url", "registration_url"].forEach(function (f) {
-      if (present(rec[f])) { var m = validateUrl(rec[f], L.url); if (m) err(f, m); }
+      if (present(rec[f])) {
+        var m = validateUrl(rec[f], L.url);
+        if (m) err(f, m);
+        else if (submission && isWrappedUrl(rec[f])) err(f, WRAPPED_URL_MESSAGE);
+      }
     });
     if (rec.format === "in-person" && present(rec.url)) err("url", "in-person meetings have no join link");
 
@@ -156,6 +175,7 @@
         text(at + ".label", l.label, L.link_label, true);
         var m = validateUrl(l.url, L.url);
         if (m) err(at + ".url", m);
+        else if (submission && isWrappedUrl(l.url)) err(at + ".url", WRAPPED_URL_MESSAGE);
       });
     }
 
@@ -196,5 +216,5 @@
     return errors;
   }
 
-  return { validate: validate, validateUrl: validateUrl };
+  return { validate: validate, validateUrl: validateUrl, isWrappedUrl: isWrappedUrl };
 });
